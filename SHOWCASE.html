@@ -1641,7 +1641,8 @@ $response = Invoke-RestMethod -Uri <span class="string">"https://98.84.46.0/v1/c
           <button class="bp-btn" onclick="loadCode('sg')">security_groups.tf</button>
           <button class="bp-btn" onclick="loadCode('playbook')">playbook.yml</button>
           <button class="bp-btn" onclick="loadCode('nginx')">iii-api.conf</button>
-          <button class="bp-btn" onclick="loadCode('worker')">inference_worker.py</button>
+          <button class="bp-btn" onclick="loadCode('inference_worker')">inference_worker.py (Python)</button>
+          <button class="bp-btn" onclick="loadCode('caller_worker')">worker.ts (TypeScript)</button>
         </div>
         <div class="bp-viewer">
           
@@ -2075,10 +2076,242 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 `,
+      instances: `# Engine Gateway VM (Public Subnet)
+resource "aws_instance" "engine" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_types["engine"]
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.engine.id]
+  key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile   = aws_iam_instance_profile.engine.name
+
+  tags = {
+    Name = "iii-engine-gateway"
+  }
+}
+
+# TypeScript Caller Worker VM (Private Subnet)
+resource "aws_instance" "caller" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_types["caller"]
+  subnet_id              = aws_subnet.private.id
+  vpc_security_group_ids = [aws_security_group.caller.id]
+  key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile   = aws_iam_instance_profile.worker.name
+
+  tags = {
+    Name = "iii-caller-worker"
+  }
+}
+
+# Python Inference Worker VM (Private Subnet)
+resource "aws_instance" "inference" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_types["inference"]
+  subnet_id              = aws_subnet.private.id
+  vpc_security_group_ids = [aws_security_group.inference.id]
+  key_name               = aws_key_pair.deployer.key_name
+  iam_instance_profile   = aws_iam_instance_profile.worker.name
+
+  tags = {
+    Name = "iii-inference-worker"
+  }
+}
+`,
+      nat: `data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+}
+
+resource "aws_security_group" "nat" {
+  name        = "iii-nat-sg"
+  description = "Allow private subnet inbound, all outbound"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.private_subnet_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
+
+  tags = {
+    Name = "iii-nat-sg"
+  }
+}
+
+resource "aws_instance" "nat" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_types["nat"]
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.nat.id]
+  source_dest_check      = false # CRITICAL for NAT routing
+  key_name               = aws_key_pair.deployer.key_name
+
+  user_data = &lt;&lt;-EOF
+              #!/bin/bash
+              set -euo pipefail
+              
+              # Enable IP forwarding in kernel
+              sysctl -w net.ipv4.ip_forward=1
+              echo "net.ipv4.ip_forward = 1" &gt;&gt; /etc/sysctl.conf
+              
+              # Configure iptables masquerading dynamically on the default interface
+              DEFAULT_INTERFACE=\$(ip route show | awk '/default/ {print \$5}')
+              iptables -t nat -A POSTROUTING -o "\$DEFAULT_INTERFACE" -j MASQUERADE
+              
+              # Save iptables rules to local file (avoids apt/interactive packages entirely)
+              mkdir -p /etc/iptables
+              iptables-save &gt; /etc/iptables/rules.v4
+              
+              # Write a simple boot service to restore rules on system restart
+              cat &lt;&lt;'INNER_EOF' &gt; /etc/systemd/system/nat-boot.service
+              [Unit]
+              Description=Restore iptables nat rules
+              After=network.target
+
+              [Service]
+              Type=oneshot
+              ExecStart=/sbin/iptables-restore /etc/iptables/rules.v4
+              RemainAfterExit=yes
+
+              [Install]
+              WantedBy=multi-user.target
+              INNER_EOF
+              
+              systemctl daemon-reload
+              systemctl enable nat-boot.service
+              systemctl start nat-boot.service
+              EOF
+
+  tags = {
+    Name = "iii-nat-instance"
+  }
+}
+`,
+      sg: `resource "aws_security_group" "engine" {
+  name        = "iii-engine-sg"
+  description = "Engine HTTP/HTTPS/WS and SSH"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "SSH from your IP"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "WebSocket RPC from Private Subnet (Caller Worker)"
+    from_port   = 49134
+    to_port     = 49134
+    protocol    = "tcp"
+    cidr_blocks = [var.private_subnet_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "iii-engine-sg"
+  }
+}
+
+# Security Group for TypeScript Caller Worker VM in Private Subnet
+resource "aws_security_group" "caller" {
+  name        = "iii-caller-sg"
+  description = "Caller worker SG in Private Subnet"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "SSH from Engine VM (Bastion)"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["\${aws_instance.engine.private_ip}/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "iii-caller-sg"
+  }
+}
+
+# Security Group for Python Inference Worker VM in Private Subnet
+resource "aws_security_group" "inference" {
+  name        = "iii-inference-sg"
+  description = "Inference worker SG in Private Subnet"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "SSH from Engine VM (Bastion)"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["\${aws_instance.engine.private_ip}/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "iii-inference-sg"
+  }
+}
+`,
       playbook: `---
 # Master Ansible Playbook for Distributed Inference Setup
 
-# 1. Standard configuration applied to all VMs (Engine & Workers)
+# 1. Standard configuration applied to all VMs (Engine &amp; Workers)
 - name: Apply common configurations to all nodes
   hosts: all
   become: true
@@ -2087,7 +2320,7 @@ resource "aws_route_table_association" "private" {
     - common
 
 # 2. Engine Gateway configuration (VM1 - Public)
-- name: Deploy Engine & Nginx API Gateway on VM1
+- name: Deploy Engine &amp; Nginx API Gateway on VM1
   hosts: engine_gateway
   become: true
   roles:
@@ -2109,49 +2342,203 @@ resource "aws_route_table_association" "private" {
     - caller-worker
 ...
 `,
-      worker: `// worker.ts — caller-worker
+      nginx: `# Rate limiting zone definition — parsed inside Nginx's main 'http' block since sites-enabled files are included there
+limit_req_zone \$binary_remote_addr zone=api_limit:10m rate=10r/s;
+
+# Server block to handle all HTTP traffic and force SSL redirection
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    # Permanent redirect to HTTPS
+    return 301 https://\$host\$request_uri;
+}
+
+# Server block for SSL/TLS terminated traffic
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name _;
+
+    # Certificates will be generated and placed here by the Ansible role
+    ssl_certificate     /etc/nginx/ssl/iii-api.crt;
+    ssl_certificate_key /etc/nginx/ssl/iii-api.key;
+
+    # Highly secure modern SSL configuration parameters
+    ssl_protocols             TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers               'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+    ssl_session_cache         shared:SSL:10m;
+    ssl_session_timeout       1d;
+    ssl_session_tickets       off;
+
+    # Enable security response headers
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none';" always;
+
+    # Primary API Gateway Routing for Inference Calls
+    # Enforces rate limiting: 10 requests per second with a burst tolerance of 20
+    location /v1/ {
+        limit_req zone=api_limit burst=20 nodelay;
+
+        # Proxy parameters pointing to locally bound iii-http engine port 3111
+        proxy_pass http://127.0.0.1:3111;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        # Generous timeouts for large language model generation times
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_connect_timeout 10s;
+    }
+
+    # Health Check endpoint — direct static 200 JSON response from Nginx
+    location /health {
+        return 200 '{"status":"healthy","uptime":"active"}';
+        add_header Content-Type application/json;
+        access_log off; # Turn off access logging to keep disk usage clean
+    }
+
+    # Custom Error Pages
+    error_page 502 /502.json;
+    location = /502.json {
+        return 502 '{"error": {"message": "Bad Gateway. The upstream iii engine is not responding or starting up.", "status": 502}}';
+        default_type application/json;
+    }
+}
+`,
+      inference_worker: `import os
+from typing import Any, Dict, List
+
+from iii import InitOptions, Logger, register_worker
+
+# Initialize the worker and connect to the central engine
+iii = register_worker(
+    os.environ.get("III_URL", "ws://localhost:49134"),
+    InitOptions(worker_name="math-worker"),
+)
+logger = Logger()
+
+logger.info("Initializing inference-worker in lightweight mock fallback mode...")
+
+def run_inference_handler(payload: Dict[str, str | List[Dict[str, Any]]] = None) -&gt; Dict[str, Any]:
+    if not isinstance(payload, dict):
+        payload = {}
+    messages = payload.get("messages", [])
+    user_query = "hello"
+    if messages and len(messages) &gt; 0:
+        # Extrapolate the user's latest query
+        user_query = messages[-1].get("content", "hello")
+
+    logger.info(f"Inference request received: '{user_query}'")
+
+    # Check if the query contains a basic arithmetic expression (e.g. 2+6, 10-5, 3*4)
+    import re
+    math_match = re.search(r'(\d+)\s*([\+\-\*\/])\s*(\d+)', user_query)
+    if math_match:
+        try:
+            num1 = int(math_match.group(1))
+            op = math_match.group(2)
+            num2 = int(math_match.group(3))
+            if op == '+':
+                mock_response = str(num1 + num2)
+            elif op == '-':
+                mock_response = str(num1 - num2)
+            elif op == '*':
+                mock_response = str(num1 * num2)
+            elif op == '/':
+                mock_response = str(num1 / num2) if num2 != 0 else "Error: division by zero"
+        except Exception as e:
+            logger.error(f"Error parsing math expression: {e}")
+            mock_response = f"Hello! This is a distributed AI inference response via the iii RPC mesh. You queried: '{user_query}'"
+    else:
+        # Generate a rich mock completion response conforming to the expected OpenAI format
+        mock_response = f"Hello! This is a distributed AI inference response via the iii RPC mesh. You queried: '{user_query}'"
+        
+    return {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": mock_response
+                }
+            }
+        ],
+        "text": mock_response
+    }
+
+# Register the target function on the central WebSocket RPC registry
+iii.register_function("inference::run_inference", run_inference_handler)
+
+print("Inference worker started - listening for calls")
+`,
+      caller_worker: `import { Logger, registerWorker } from 'iii-sdk';
+
 const iii = registerWorker(process.env.III_URL ?? 'ws://localhost:49134');
+const logger = new Logger();
 
-// Registered as the RPC entry point for external callers
-iii.registerFunction('inference::get_response', async (payload) =&gt; {
-  // Trigger the Python worker via RPC through the engine
-  const result = await iii.trigger({
-    function_id: 'inference::run_inference',
-    payload,
-  });
-  return { ...result, success: "Workers interoperating seamlessly." };
-});
+iii.registerFunction(
+  'inference::get_response',
+  async (payload: { messages: Record&lt;string, any&gt; } &amp; Record&lt;string, any&gt;) =&gt; {
+    logger.info('inference::get_response called in TypeScript', payload);
 
-// HTTP trigger — maps POST /v1/chat/completions to this function
-iii.registerFunction('http::run_inference_over_http', async (payload) =&gt; {
-  // Parse request body, call inference::get_response
-  const result = await iii.trigger({
-    function_id: 'inference::get_response',
-    payload: body,
-  });
-  return { status_code: 200, body: result, headers: { 'Content-Type': 'application/json' } };
-});
+    const result = await iii.trigger({
+      function_id: 'inference::run_inference',
+      payload,
+    });
+
+    return {
+      ...result,
+      success:
+        "You've connected two workers and they're interoperating seamlessly, now let's add a few more workers to expand this project's functionality.",
+    };
+  },
+);
+
+iii.registerFunction(
+  'http::run_inference_over_http',
+  async (payload: any) =&gt; {
+    let body = payload.body;
+    if (!body &amp;&amp; payload.request_body) {
+      try {
+        const buf = await payload.request_body.readAll();
+        const str = buf.toString('utf-8');
+        body = str ? JSON.parse(str) : {};
+      } catch (err: any) {
+        logger.error('Failed to parse body stream via readAll', { error: err.message });
+      }
+    }
+
+    logger.info('http::run_inference_over_http parsed body:', body);
+
+    const result = await iii.trigger({
+      function_id: 'inference::get_response',
+      payload: body,
+    });
+
+    logger.info("Running http inference with result:", result);
+
+    return {
+      status_code: 200,
+      body: result,
+      headers: { 'Content-Type': 'application/json' },
+    };
+  },
+);
 
 iii.registerTrigger({
   type: 'http',
   function_id: 'http::run_inference_over_http',
   config: { api_path: '/v1/chat/completions', http_method: 'POST' },
-});`,
-      engine: `# inference_worker.py
-iii = register_worker(os.environ.get("III_URL", "ws://localhost:49134"))
+});
 
-def run_inference_handler(payload):
-    messages = payload.get("messages", [])
-    user_query = messages[-1].get("content", "hello")
-
-    # Generate response (mock / SLM-backed)
-    mock_response = f"Distributed AI inference response. Query: '{user_query}'"
-    return {
-        "choices": [{"message": {"role": "assistant", "content": mock_response}}],
-        "text": mock_response
-    }
-
-iii.register_function("inference::run_inference", run_inference_handler)`
+logger.info('Caller worker started - listening for calls');
+`
     };
 
     function loadCode(fileId) {
@@ -2166,7 +2553,8 @@ iii.register_function("inference::run_inference", run_inference_handler)`
         sg: 'security_groups.tf',
         playbook: 'ansible/playbook.yml',
         nginx: 'nginx/iii-api.conf',
-        worker: 'quickstart/workers/inference-worker/inference_worker.py'
+        inference_worker: 'quickstart/workers/inference-worker/inference_worker.py',
+        caller_worker: 'quickstart/workers/caller-worker/src/worker.ts'
       };
 
       document.getElementById('bp-filename').textContent = names[fileId];
@@ -2272,6 +2660,6 @@ iii.register_function("inference::run_inference", run_inference_handler)`
         alert('Code copied to clipboard!');
       });
     }
-\n  </script>
+</script>
 </body>
 </html>
