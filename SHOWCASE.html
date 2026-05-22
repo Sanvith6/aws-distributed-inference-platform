@@ -1051,7 +1051,7 @@
     </div>
 
     <!-- TAB 1: ARCHITECTURE & TRACER -->
-    <div id="architecture" class="tab-content active animate-up delay-4">
+    <div id="architecture" class="tab-content active">
       <div class="metrics-grid">
         <div class="metric-card">
           <div class="metric-header">Edge Proxy Status <span class="glow-dot"></span></div>
@@ -1216,7 +1216,7 @@
     </div>
 
     <!-- TAB 2: SIMULATOR -->
-    <div id="simulator" class="tab-content animate-up delay-4">
+    <div id="simulator" class="tab-content">
       <div class="grid-2">
         <!-- Client Prompt Card -->
         <div class="card">
@@ -1264,7 +1264,7 @@
     </div>
 
     <!-- TAB 3: DEBUGGING JOURNAL -->
-    <div id="journal" class="tab-content animate-up delay-4">
+    <div id="journal" class="tab-content">
       <div class="card" style="margin-bottom: 2rem;">
         <h2 class="card-title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
@@ -1632,7 +1632,7 @@ $response = Invoke-RestMethod -Uri <span class="string">"https://98.84.46.0/v1/c
     </div>
 
     <!-- TAB 4: BLUEPRINTS -->
-    <div id="blueprints" class="tab-content animate-up delay-4">
+    <div id="blueprints" class="tab-content">
       <div class="blueprint-explorer">
         <div class="bp-sidebar">
           <button class="bp-btn active" onclick="loadCode('vpc')">vpc.tf (IaC)</button>
@@ -1664,7 +1664,7 @@ $response = Invoke-RestMethod -Uri <span class="string">"https://98.84.46.0/v1/c
     </div>
 
     <!-- TAB 5: HARDENING & SCALING -->
-    <div id="hardening" class="tab-content animate-up delay-4">
+    <div id="hardening" class="tab-content">
       <div class="card" style="margin-bottom: 2rem;">
         <h2 class="card-title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -2008,143 +2008,150 @@ $response = Invoke-RestMethod -Uri <span class="string">"https://98.84.46.0/v1/c
 
     // Code files content library
     const codeLibrary = {
-      vpc: `<span class="comment"># vpc.tf - VPC Networking and isolation configuration</span>
-<span class="keyword">resource</span> <span class="string">"aws_vpc"</span> <span class="string">"main"</span> {
-  <span class="keyword">cidr_block</span>           = <span class="string">"10.0.0.0/16"</span>
-  <span class="keyword">enable_dns_hostnames</span> = <span class="keyword">true</span>
-  <span class="keyword">tags</span> = { <span class="keyword">Name</span> = <span class="string">"iii-devops-vpc"</span> }
+      vpc: `resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  tags = {
+    Name = "iii-devops-vpc"
+  }
 }
 
-<span class="keyword">resource</span> <span class="string">"aws_subnet"</span> <span class="string">"public"</span> {
-  <span class="keyword">vpc_id</span>                  = <span class="type">aws_vpc.main.id</span>
-  <span class="keyword">cidr_block</span>              = <span class="string">"10.0.1.0/24"</span>
-  <span class="keyword">map_public_ip_on_launch</span> = <span class="keyword">true</span>
-  <span class="keyword">tags</span> = { <span class="keyword">Name</span> = <span class="string">"iii-public-subnet"</span> }
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_cidr
+  map_public_ip_on_launch = true
+  availability_zone       = "\${var.aws_region}a"
+  tags = {
+    Name = "iii-public-subnet"
+  }
 }
 
-<span class="keyword">resource</span> <span class="string">"aws_subnet"</span> <span class="string">"private"</span> {
-  <span class="keyword">vpc_id</span>                  = <span class="type">aws_vpc.main.id</span>
-  <span class="keyword">cidr_block</span>              = <span class="string">"10.0.2.0/24"</span>
-  <span class="keyword">map_public_ip_on_launch</span> = <span class="keyword">false</span>
-  <span class="keyword">tags</span> = { <span class="keyword">Name</span> = <span class="string">"iii-private-subnet"</span> }
-}`,
-      instances: `<span class="comment"># instances.tf - Isolated EC2 instance setups</span>
-<span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"engine"</span> {
-  <span class="keyword">ami</span>                  = <span class="string">"ami-0c7217cdde317cfec"</span> <span class="comment"># Ubuntu 22.04</span>
-  <span class="keyword">instance_type</span>        = <span class="string">"t3.micro"</span>
-  <span class="keyword">subnet_id</span>            = <span class="type">aws_subnet.public.id</span>
-  <span class="keyword">security_groups</span>      = [<span class="type">aws_security_group.engine_sg.id</span>]
-  <span class="keyword">key_name</span>             = <span class="type">aws_key_pair.iii_key.key_name</span>
-  <span class="keyword">tags</span>                 = { <span class="keyword">Name</span> = <span class="string">"iii-engine-gateway"</span> }
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.private_subnet_cidr
+  availability_zone = "\${var.aws_region}a"
+  tags = {
+    Name = "iii-private-subnet"
+  }
 }
 
-<span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"inference_worker"</span> {
-  <span class="keyword">ami</span>                  = <span class="string">"ami-0c7217cdde317cfec"</span>
-  <span class="keyword">instance_type</span>        = <span class="string">"t3.micro"</span>
-  <span class="keyword">subnet_id</span>            = <span class="type">aws_subnet.private.id</span>
-  <span class="keyword">security_groups</span>      = [<span class="type">aws_security_group.worker_sg.id</span>]
-  <span class="keyword">key_name</span>             = <span class="type">aws_key_pair.iii_key.key_name</span>
-  <span class="keyword">root_block_device</span> {
-    <span class="keyword">volume_size</span>        = <span class="number">20</span> <span class="comment"># Prevent wheel installation space exhaustion</span>
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "iii-igw"
   }
-  <span class="keyword">tags</span>                 = { <span class="keyword">Name</span> = <span class="string">"iii-inference-worker"</span> }
-}`,
-      nat: `<span class="comment"># nat_instance.tf - Custom cost-optimized NAT configuration</span>
-<span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"nat"</span> {
-  <span class="keyword">ami</span>                         = <span class="string">"ami-0c7217cdde317cfec"</span>
-  <span class="keyword">instance_type</span>               = <span class="string">"t3.nano"</span>
-  <span class="keyword">subnet_id</span>                   = <span class="type">aws_subnet.public.id</span>
-  <span class="keyword">source_dest_check</span>           = <span class="keyword">false</span> <span class="comment"># MUST be false for routing to function</span>
-  <span class="keyword">security_groups</span>             = [<span class="type">aws_security_group.nat_sg.id</span>]
-  
-  <span class="keyword">user_data</span> = <span class="string">&lt;&lt;-EOF</span>
-    #!/bin/bash
-    sysctl -w net.ipv4.ip_forward=1
-    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-    DEFAULT_INTERFACE=$(ip route show | awk '/default/ {print $5}')
-    iptables -t nat -A POSTROUTING -o "$DEFAULT_INTERFACE" -j MASQUERADE
-  <span class="string">EOF</span>
-}`,
-      sg: `<span class="comment"># security_groups.tf - Firewall constraints for Network Hygiene</span>
-<span class="keyword">resource</span> <span class="string">"aws_security_group"</span> <span class="string">"worker_sg"</span> {
-  <span class="keyword">vpc_id</span> = <span class="type">aws_vpc.main.id</span>
-  
-  <span class="comment"># Block direct internet ingress port 22 SSH. Route strictly via VM1 private IP!</span>
-  <span class="keyword">ingress</span> {
-    <span class="keyword">from_port</span>   = <span class="number">22</span>
-    <span class="keyword">to_port</span>     = <span class="number">22</span>
-    <span class="keyword">protocol</span>    = <span class="string">"tcp"</span>
-    <span class="keyword">cidr_blocks</span> = [<span class="string">"10.0.1.80/32"</span>] <span class="comment"># VM1 Private IP strictly enforced</span>
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
   }
-
-  <span class="keyword">egress</span> {
-    <span class="keyword">from_port</span>   = <span class="number">0</span>
-    <span class="keyword">to_port</span>     = <span class="number">0</span>
-    <span class="keyword">protocol</span>    = <span class="string">"-1"</span>
-    <span class="keyword">cidr_blocks</span> = [<span class="string">"0.0.0.0/0"</span>]
+  tags = {
+    Name = "iii-public-rt"
   }
-}`,
-      playbook: `<span class="comment"># playbook.yml - Master Ansible automation playbook</span>
-<span class="keyword">- name:</span> Configure Gateway Server (VM1)
-  <span class="keyword">hosts:</span> engine_gateway
-  <span class="keyword">become:</span> yes
-  <span class="keyword">roles:</span>
-    <span class="keyword">-</span> common
-    <span class="keyword">-</span> nginx
-    <span class="keyword">-</span> engine
+}
 
-<span class="keyword">- name:</span> Configure Isolated Python Worker (VM2)
-  <span class="keyword">hosts:</span> inference_worker
-  <span class="keyword">become:</span> yes
-  <span class="keyword">roles:</span>
-    <span class="keyword">-</span> common
-    <span class="keyword">-</span> inference-worker
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
 
-<span class="keyword">- name:</span> Configure Isolated TypeScript Worker (VM3)
-  <span class="keyword">hosts:</span> caller_worker
-  <span class="keyword">become:</span> yes
-  <span class="keyword">roles:</span>
-    <span class="keyword">-</span> common
-    <span class="keyword">-</span> caller-worker`,
-      nginx: `<span class="comment"># iii-api.conf - Nginx TLS and Rate Limiting Proxy</span>
-limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+  route {
+    cidr_block           = "0.0.0.0/0"
+    network_interface_id = aws_instance.nat.primary_network_interface_id
+  }
+  tags = {
+    Name = "iii-private-rt"
+  }
+}
 
-server {
-    listen 443 ssl;
-    ssl_certificate /etc/nginx/ssl/iii.crt;
-    ssl_certificate_key /etc/nginx/ssl/iii.key;
-    ssl_protocols TLSv1.2 TLSv1.3;
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+`,
+      playbook: `---
+# Master Ansible Playbook for Distributed Inference Setup
 
-    location / {
-        limit_req zone=api_limit burst=20 nodelay;
-        proxy_pass http://127.0.0.1:3111;
-        proxy_set_header X-Real-IP $remote_addr;
-        
-        <span class="comment"># Resiliency fallback for broker drops</span>
-        proxy_next_upstream error timeout http_502;
-        proxy_next_upstream_tries 3;
+# 1. Standard configuration applied to all VMs (Engine & Workers)
+- name: Apply common configurations to all nodes
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - common
+
+# 2. Engine Gateway configuration (VM1 - Public)
+- name: Deploy Engine & Nginx API Gateway on VM1
+  hosts: engine_gateway
+  become: true
+  roles:
+    - nginx
+    - engine
+
+# 3. Inference Worker VM configuration (VM2 - Private)
+- name: Deploy Python inference worker on VM2
+  hosts: inference_worker
+  become: true
+  roles:
+    - inference-worker
+
+# 4. Caller Worker VM configuration (VM3 - Private)
+- name: Deploy TypeScript caller worker on VM3
+  hosts: caller_worker
+  become: true
+  roles:
+    - caller-worker
+...
+`,
+      worker: `// worker.ts — caller-worker
+const iii = registerWorker(process.env.III_URL ?? 'ws://localhost:49134');
+
+// Registered as the RPC entry point for external callers
+iii.registerFunction('inference::get_response', async (payload) =&gt; {
+  // Trigger the Python worker via RPC through the engine
+  const result = await iii.trigger({
+    function_id: 'inference::run_inference',
+    payload,
+  });
+  return { ...result, success: "Workers interoperating seamlessly." };
+});
+
+// HTTP trigger — maps POST /v1/chat/completions to this function
+iii.registerFunction('http::run_inference_over_http', async (payload) =&gt; {
+  // Parse request body, call inference::get_response
+  const result = await iii.trigger({
+    function_id: 'inference::get_response',
+    payload: body,
+  });
+  return { status_code: 200, body: result, headers: { 'Content-Type': 'application/json' } };
+});
+
+iii.registerTrigger({
+  type: 'http',
+  function_id: 'http::run_inference_over_http',
+  config: { api_path: '/v1/chat/completions', http_method: 'POST' },
+});`,
+      engine: `# inference_worker.py
+iii = register_worker(os.environ.get("III_URL", "ws://localhost:49134"))
+
+def run_inference_handler(payload):
+    messages = payload.get("messages", [])
+    user_query = messages[-1].get("content", "hello")
+
+    # Generate response (mock / SLM-backed)
+    mock_response = f"Distributed AI inference response. Query: '{user_query}'"
+    return {
+        "choices": [{"message": {"role": "assistant", "content": mock_response}}],
+        "text": mock_response
     }
-}`,
-      worker: `<span class="comment"># inference_worker.py - Python worker arithmetic evaluator</span>
-<span class="keyword">import</span> re
-<span class="keyword">from</span> iii <span class="keyword">import</span> Client
 
-client = Client()
-
-<span class="type">@client.register</span>(<span class="string">"inference::run_inference"</span>)
-<span class="keyword">def</span> <span class="function">run_inference</span>(payload):
-    content = payload.get(<span class="string">"prompt"</span>, <span class="string">""</span>)
-    
-    <span class="comment"># Regex dynamic arithmetic engine</span>
-    match = re.search(<span class="string">r"(\\d+)\\s*([\\+\\-\\*\\/])\\s*(\\d+)"</span>, content)
-    <span class="keyword">if</span> match:
-        a, op, b = int(match.group(<span class="number">1</span>)), match.group(<span class="number">2</span>), int(match.group(<span class="number">3</span>))
-        result = a * b <span class="keyword">if</span> op == <span class="string">'*'</span> <span class="keyword">else</span> a + b <span class="keyword">if</span> op == <span class="string">'+'</span> <span class="keyword">else</span> a - b <span class="keyword">if</span> op == <span class="string">'-'</span> <span class="keyword">else</span> a // b
-        <span class="keyword">return</span> {<span class="string">"response"</span>: f<span class="string">"Calculated result: {result}"</span>}
-        
-    <span class="keyword">return</span> {<span class="string">"response"</span>: f<span class="string">"Reflected: {content}"</span>}
-
-client.start()`
+iii.register_function("inference::run_inference", run_inference_handler)`
     };
 
     function loadCode(fileId) {
