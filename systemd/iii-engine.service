@@ -1,0 +1,29 @@
+[Unit]
+Description=iii Distributed Inference Engine (Production)
+After=network.online.target nginx.service
+Wants=network-online.target
+Requires=nginx.service
+
+[Service]
+Type=simple
+User=iii
+Group=iii
+WorkingDirectory=/opt/iii/quickstart
+Environment=NODE_ENV=production
+ExecStart=/usr/local/bin/iii start
+Restart=always
+RestartSec=5
+
+# Security Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/iii
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

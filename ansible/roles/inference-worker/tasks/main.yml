@@ -1,0 +1,57 @@
+---
+# Inference worker tasks to deploy and run the Python-based SLM model inference engine
+
+- name: Create the Python inference worker application directory
+  ansible.builtin.file:
+    path: "{{ inference_worker_dir }}"
+    state: directory
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0755"
+
+- name: Upload Python inference worker source code and requirements
+  ansible.builtin.copy:
+    src: "../../../quickstart/workers/inference-worker/{{ item }}"
+    dest: "{{ inference_worker_dir }}/{{ item }}"
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0644"
+  loop:
+    - inference_worker.py
+    - requirements.txt
+  notify: Restart inference-worker
+
+- name: Create Python 3 virtual environment for the worker
+  ansible.builtin.pip:
+    requirements: "{{ inference_worker_dir }}/requirements.txt"
+    virtualenv: "{{ inference_worker_dir }}/venv"
+    virtualenv_command: "python3 -m venv"
+  become: true
+  become_user: "{{ iii_user }}"
+  notify: Restart inference-worker
+
+- name: Deploy the systemd service file for inference-worker
+  ansible.builtin.copy:
+    src: "../../../systemd/inference-worker.service"
+    dest: "/etc/systemd/system/inference-worker.service"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Bind the worker to the correct central Engine private IP address
+  ansible.builtin.replace:
+    path: "/etc/systemd/system/inference-worker.service"
+    regexp: 'ws://ENGINE_PRIVATE_IP:49134'
+    replace: "ws://{{ engine_private_ip }}:49134"
+  notify: Restart inference-worker
+
+- name: Reload systemd daemon to recognize the new inference service
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Start and enable the inference-worker service
+  ansible.builtin.systemd:
+    name: inference-worker
+    state: started
+    enabled: true
+...

@@ -1,0 +1,33 @@
+[Unit]
+Description=iii Inference Worker (Python SLM)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=iii
+Group=iii
+WorkingDirectory=/opt/iii/workers/inference-worker
+Environment=III_URL=ws://ENGINE_PRIVATE_IP:49134
+Environment=HF_HOME=/opt/iii/.cache
+ExecStart=/opt/iii/workers/inference-worker/venv/bin/python inference_worker.py
+Restart=always
+RestartSec=10
+
+# Generous startup timeout - the worker downloads a ~540MB GGUF model from HuggingFace on first boot.
+# Over a t3.nano NAT instance connection, this can take up to 2-3 minutes.
+TimeoutStartSec=300
+
+# Security Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/iii
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

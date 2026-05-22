@@ -1,0 +1,71 @@
+---
+# Caller worker tasks to deploy and run the TypeScript-based HTTP trigger worker
+
+- name: Create the TypeScript caller worker application directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0755"
+  loop:
+    - "{{ caller_worker_dir }}"
+    - "{{ caller_worker_dir }}/src"
+
+- name: Upload TypeScript caller worker package configurations
+  ansible.builtin.copy:
+    src: "../../../quickstart/workers/caller-worker/{{ item }}"
+    dest: "{{ caller_worker_dir }}/{{ item }}"
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0644"
+  loop:
+    - package.json
+    - package-lock.json
+    - tsconfig.json
+  notify: Restart caller-worker
+
+- name: Upload TypeScript source code files
+  ansible.builtin.copy:
+    src: "../../../quickstart/workers/caller-worker/src/{{ item }}"
+    dest: "{{ caller_worker_dir }}/src/{{ item }}"
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0644"
+  loop:
+    - worker.ts
+  notify: Restart caller-worker
+
+- name: Install Node.js package dependencies using npm
+  npm:
+    path: "{{ caller_worker_dir }}"
+    state: present
+  become: true
+  become_user: "{{ iii_user }}"
+  notify: Restart caller-worker
+
+- name: Deploy the systemd service file for caller-worker
+  ansible.builtin.copy:
+    src: "../../../systemd/caller-worker.service"
+    dest: "/etc/systemd/system/caller-worker.service"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Bind the worker to the correct central Engine private IP address
+  ansible.builtin.replace:
+    path: "/etc/systemd/system/caller-worker.service"
+    regexp: 'ws://ENGINE_PRIVATE_IP:49134'
+    replace: "ws://{{ engine_private_ip }}:49134"
+  notify: Restart caller-worker
+
+- name: Reload systemd daemon to recognize the new caller service
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Start and enable the caller-worker service
+  ansible.builtin.systemd:
+    name: caller-worker
+    state: started
+    enabled: true
+...

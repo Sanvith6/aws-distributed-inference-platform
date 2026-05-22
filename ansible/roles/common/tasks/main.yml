@@ -1,0 +1,136 @@
+---
+# Common role to provision base packages, compilers, Node, Python, and the 'iii' system user
+
+- name: Wait for any automatic apt operations to release locks
+  ansible.builtin.shell: |
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+      echo "Waiting for apt lock-frontend..."
+      sleep 3
+    done
+  changed_when: false
+
+- name: Install system package dependencies
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - curl
+      - git
+      - python3-pip
+      - python3-venv
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+      - logrotate
+      - jq
+      - acl
+    state: present
+    update_cache: true
+
+- name: Add NodeSource official GPG key for Node.js repository
+  ansible.builtin.apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key"
+    state: present
+
+- name: Add NodeSource Node.js repository for version 20
+  ansible.builtin.apt_repository:
+    repo: "deb https://deb.nodesource.com/node_20.x nodistro main"
+    state: present
+    update_cache: true
+
+- name: Install Node.js from NodeSource
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+
+- name: Proactively install/update global Node packages (tsx)
+  npm:
+    name: tsx
+    global: yes
+    state: present
+
+- name: Download and install the real iii engine CLI
+  ansible.builtin.shell: |
+    curl -fsSL https://install.iii.dev/iii/main/install.sh | BIN_DIR=/usr/local/bin sh
+  args:
+    creates: /usr/local/bin/iii
+
+- name: Create the dedicated 'iii' system group
+  ansible.builtin.group:
+    name: "{{ iii_group }}"
+    system: true
+    state: present
+
+- name: Create the dedicated non-login system user 'iii'
+  ansible.builtin.user:
+    name: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    shell: "/usr/sbin/nologin"
+    system: true
+    create_home: true
+    home: "/home/iii"
+    state: present
+
+- name: Prepare primary directory structures under /opt/iii
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0755"
+  loop:
+    - "{{ opt_iii_root }}"
+    - "/opt/iii/workers"
+
+- name: Harden system journal logs to prevent unbounded disk utilization
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '^#?SystemMaxUse='
+    line: 'SystemMaxUse=500M'
+    state: present
+  notify: Restart systemd-journald
+
+- name: Ensure journald service limits are applied
+  ansible.builtin.meta: flush_handlers
+
+- name: Determine if swap file exists
+  ansible.builtin.stat:
+    path: /swapfile
+  register: swap_file_stat
+
+- name: Determine swap size (2GB for memory cushioning)
+  ansible.builtin.set_fact:
+    swap_size_mb: 2048
+
+- name: Create swap file for memory cushioning on Free Tier nodes
+  ansible.builtin.command: "dd if=/dev/zero of=/swapfile bs=1M count={{ swap_size_mb }}"
+  when: not swap_file_stat.stat.exists
+  become: true
+
+- name: Set permissions on the swap file
+  ansible.builtin.file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+
+- name: Format the swap file
+  ansible.builtin.command: mkswap /swapfile
+  when: not swap_file_stat.stat.exists
+  become: true
+
+- name: Enable the swap file
+  ansible.builtin.command: swapon /swapfile
+  register: swapon_result
+  failed_when: swapon_result.rc != 0 and 'device or resource busy' not in swapon_result.stderr and 'Device or resource busy' not in swapon_result.stderr
+  become: true
+
+- name: Persist the swap file configuration in fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^/swapfile'
+    line: '/swapfile none swap sw 0 0'
+    state: present
+  become: true
+...
+

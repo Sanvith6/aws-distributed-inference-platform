@@ -1,0 +1,8 @@
+---
+# Handlers for inference-worker role
+
+- name: Restart inference-worker
+  ansible.builtin.systemd:
+    name: inference-worker
+    state: restarted
+...

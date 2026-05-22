@@ -1,0 +1,8 @@
+---
+# Handlers for engine role
+
+- name: Restart iii-engine
+  ansible.builtin.systemd:
+    name: iii-engine
+    state: restarted
+...

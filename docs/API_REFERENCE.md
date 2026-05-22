@@ -1,0 +1,369 @@
+# API Reference
+
+This document describes all HTTP endpoints exposed by the distributed inference platform. The API is accessed via the Nginx reverse proxy on VM1 and is compatible with the OpenAI Chat Completions API format.
+
+**Base URL:** `https://<ENGINE_PUBLIC_IP>`
+
+> ⚠️ The server uses a self-signed SSL certificate. Pass `-k` or `--insecure` with curl, or configure your HTTP client to skip TLS verification in development.
+
+---
+
+## Table of Contents
+
+1. [Authentication](#1-authentication)
+2. [GET /health](#2-get-health)
+3. [POST /v1/chat/completions](#3-post-v1chatcompletions)
+4. [Error Responses](#4-error-responses)
+5. [Rate Limiting](#5-rate-limiting)
+6. [Request Timeout Guidance](#6-request-timeout-guidance)
+7. [SDK Examples](#7-sdk-examples)
+
+---
+
+## 1. Authentication
+
+This demo deployment does **not** implement API key authentication. All endpoints are publicly accessible (rate-limited) via the HTTPS endpoint.
+
+In a production deployment, authentication would be added at the Nginx layer using JWT validation middleware or an API key header check.
+
+---
+
+## 2. GET /health
+
+Returns the health and readiness status of the API gateway.
+
+### Request
+
+```
+GET /health
+```
+
+No request body or headers required.
+
+### Response
+
+**200 OK** — Service is healthy and accepting requests
+
+```json
+{
+  "status": "healthy",
+  "uptime": "active"
+}
+```
+
+**502 Bad Gateway** — The iii-engine is not running or starting up
+
+```json
+{
+  "error": {
+    "message": "Bad Gateway. The upstream iii engine is not responding or starting up.",
+    "status": 502
+  }
+}
+```
+
+### Example
+
+```bash
+curl -k "https://<ENGINE_PUBLIC_IP>/health"
+```
+
+**Expected Output:**
+```json
+{"status":"healthy","uptime":"active"}
+```
+
+### Notes
+
+- The `/health` response is **generated directly by Nginx** — it does not require the iii-engine or any worker to be running
+- Use this endpoint to verify that the API gateway itself is available, independent of backend worker health
+- A 200 from `/health` means Nginx is up; it does NOT guarantee that workers are registered and inference is working
+- For full end-to-end validation, use `POST /v1/chat/completions`
+
+---
+
+## 3. POST /v1/chat/completions
+
+Triggers an end-to-end distributed inference request. The request flows from Nginx through the iii-engine, caller-worker (TypeScript), and inference-worker (Python) before returning a response.
+
+### Request
+
+```
+POST /v1/chat/completions
+Content-Type: application/json
+```
+
+### Request Schema
+
+```json
+{
+  "messages": [
+    {
+      "role": "system" | "user" | "assistant",
+      "content": "string"
+    }
+  ]
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `messages` | `array` | ✅ Yes | Array of chat message objects |
+| `messages[].role` | `string` | ✅ Yes | Role of the message author: `system`, `user`, or `assistant` |
+| `messages[].content` | `string` | ✅ Yes | The message text |
+
+### Response Schema
+
+**200 OK**
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "string"
+      }
+    }
+  ],
+  "text": "string",
+  "success": "string"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `choices` | `array` | Array of completion choices |
+| `choices[].message.role` | `string` | Always `"assistant"` |
+| `choices[].message.content` | `string` | The generated response text |
+| `text` | `string` | Raw response text (same as `choices[0].message.content`) |
+| `success` | `string` | Confirmation message from the caller-worker |
+
+### Example Requests
+
+#### Minimal Request
+
+```bash
+curl -k -X POST "https://<ENGINE_PUBLIC_IP>/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": "Hello, what can you do?"}
+    ]
+  }'
+```
+
+#### Full Request with System Prompt
+
+```bash
+curl -k -X POST "https://<ENGINE_PUBLIC_IP>/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user",   "content": "What is 2+2?"}
+    ]
+  }'
+```
+
+#### Example Response
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Hello! This is a distributed AI inference response via the iii RPC mesh. You queried: 'What is 2+2?'"
+      }
+    }
+  ],
+  "text": "Hello! This is a distributed AI inference response via the iii RPC mesh. You queried: 'What is 2+2?'",
+  "success": "You've connected two workers and they're interoperating seamlessly, now let's add a few more workers to expand this project's functionality."
+}
+```
+
+#### Windows PowerShell Example
+
+```powershell
+$body = @{
+    messages = @(
+        @{ role = "system"; content = "You are a helpful assistant." },
+        @{ role = "user";   content = "What is 2+2?" }
+    )
+} | ConvertTo-Json -Depth 3
+
+$engineIp = (terraform output -raw engine_public_ip)
+$response = Invoke-WebRequest `
+    -Uri "https://$engineIp/v1/chat/completions" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $body `
+    -SkipCertificateCheck
+
+$response.Content | ConvertFrom-Json
+```
+
+#### Python requests Example
+
+```python
+import requests
+import json
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+ENGINE_IP = "YOUR_ENGINE_PUBLIC_IP"
+
+response = requests.post(
+    f"https://{ENGINE_IP}/v1/chat/completions",
+    json={
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user",   "content": "What is 2+2?"}
+        ]
+    },
+    verify=False,   # Accept self-signed cert in dev
+    timeout=120     # LLM generation can be slow
+)
+
+data = response.json()
+print(data["choices"][0]["message"]["content"])
+```
+
+### How the Request Flows
+
+```
+Your curl command
+    ↓
+Nginx (:443) — TLS termination, rate-limit check, proxy to :3111
+    ↓
+iii-engine (:3111) — looks up HTTP trigger for POST /v1/chat/completions
+    ↓
+caller-worker (VM3, TypeScript) — receives trigger, parses body
+    ↓  (nested RPC call: inference::get_response → inference::run_inference)
+inference-worker (VM2, Python) — generates response
+    ↓  (return value travels back up the chain)
+JSON response to your terminal
+```
+
+---
+
+## 4. Error Responses
+
+### 429 Too Many Requests — Rate Limit Exceeded
+
+```
+HTTP/1.1 429 Too Many Requests
+```
+
+Occurs when a client exceeds 10 requests/second (with burst tolerance of 20). Wait and retry.
+
+### 502 Bad Gateway — Engine or Worker Unavailable
+
+```json
+{
+  "error": {
+    "message": "Bad Gateway. The upstream iii engine is not responding or starting up.",
+    "status": 502
+  }
+}
+```
+
+**Causes:**
+- `iii-engine` service is stopped or restarting
+- Workers have not yet registered with the engine (check 30 seconds after restart)
+- Engine is starting up after a crash (typically recovers in 10-30 seconds)
+
+**Resolution:**
+```bash
+ssh -i terraform/iii-key.pem ubuntu@<ENGINE_IP>
+sudo systemctl status iii-engine
+sudo journalctl -u iii-engine -n 50 --no-pager
+```
+
+### 504 Gateway Timeout — Inference Took Too Long
+
+Occurs when inference exceeds the 120-second `proxy_read_timeout` configured in Nginx.
+
+**Causes:**
+- Model is loading for the first time (downloading GGUF file — wait 2-5 minutes)
+- Inference is running on a heavily loaded instance
+
+**Resolution:**
+- Wait 2-3 minutes on first deployment for model download to complete
+- Check worker logs: `sudo journalctl -u inference-worker -f`
+
+---
+
+## 5. Rate Limiting
+
+The API gateway enforces per-client-IP rate limiting:
+
+| Parameter | Value |
+|---|---|
+| Sustained rate | 10 requests/second |
+| Burst allowance | 20 requests |
+| Rate limit zone | Per client IP (binary IP format) |
+| Zone memory | 10MB (supports ~160,000 unique IPs) |
+
+When the rate limit is exceeded, Nginx returns `429 Too Many Requests`. The `nodelay` flag means burst requests are served immediately without queueing, but once the burst budget is exhausted, requests fail instantly rather than being delayed.
+
+---
+
+## 6. Request Timeout Guidance
+
+| Scenario | Expected Latency | Nginx Timeout |
+|---|---|---|
+| `/health` check | < 100ms | N/A (static response) |
+| First inference (model loading + generation) | 2-5 minutes | 120s (`proxy_read_timeout`) |
+| Subsequent inference (model cached) | 100ms - 30s | 120s |
+| Inference with long prompt | 10-60s | 120s |
+
+> For clients calling the API, set your HTTP client timeout to at least **120 seconds** to match Nginx's upstream timeout.
+
+---
+
+## 7. SDK Examples
+
+### Automated Test Script
+
+The repository includes ready-made test scripts:
+
+```bash
+# Bash / macOS / WSL
+./scripts/test-api.sh
+
+# PowerShell (Windows)
+.\scripts\test-api.ps1
+
+# Make
+make test
+```
+
+These scripts automatically read the Engine public IP from Terraform output and send a test request with schema validation.
+
+### Using with OpenAI-Compatible SDKs
+
+The `/v1/chat/completions` endpoint follows the OpenAI API request schema. You can point the OpenAI Python SDK at this endpoint by overriding the base URL:
+
+```python
+import openai
+
+client = openai.OpenAI(
+    api_key="not-required",   # No auth in this deployment
+    base_url=f"https://{ENGINE_IP}",
+    http_client=httpx.Client(verify=False)   # Accept self-signed cert
+)
+
+response = client.chat.completions.create(
+    model="iii-inference",    # Model name is ignored but required by SDK
+    messages=[
+        {"role": "user", "content": "What is 2+2?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+> ⚠️ **Note:** The response schema returned by this API is a subset of the full OpenAI Chat Completions response. Fields like `id`, `object`, `created`, `model`, and token `usage` are not currently returned.

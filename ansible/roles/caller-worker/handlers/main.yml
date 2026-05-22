@@ -1,0 +1,8 @@
+---
+# Handlers for caller-worker role
+
+- name: Restart caller-worker
+  ansible.builtin.systemd:
+    name: caller-worker
+    state: restarted
+...

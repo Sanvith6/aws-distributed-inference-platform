@@ -1,0 +1,33 @@
+---
+# Master Ansible Playbook for Distributed Inference Setup
+
+# 1. Standard configuration applied to all VMs (Engine & Workers)
+- name: Apply common configurations to all nodes
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - common
+
+# 2. Engine Gateway configuration (VM1 - Public)
+- name: Deploy Engine & Nginx API Gateway on VM1
+  hosts: engine_gateway
+  become: true
+  roles:
+    - nginx
+    - engine
+
+# 3. Inference Worker VM configuration (VM2 - Private)
+- name: Deploy Python inference worker on VM2
+  hosts: inference_worker
+  become: true
+  roles:
+    - inference-worker
+
+# 4. Caller Worker VM configuration (VM3 - Private)
+- name: Deploy TypeScript caller worker on VM3
+  hosts: caller_worker
+  become: true
+  roles:
+    - caller-worker
+...

@@ -1,0 +1,64 @@
+---
+# Engine role tasks to configure and execute the central iii distributed coordinator
+
+- name: Create the Engine application root directory
+  ansible.builtin.file:
+    path: "{{ engine_dir }}"
+    state: directory
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0755"
+
+- name: Upload modified config.yaml and iii.lock files to Engine
+  ansible.builtin.copy:
+    src: "../../../quickstart/{{ item }}"
+    dest: "{{ engine_dir }}/{{ item }}"
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0644"
+  loop:
+    - config.yaml
+    - iii.lock
+  notify: Restart iii-engine
+
+- name: Ensure the data state directory exists and has correct permissions
+  ansible.builtin.file:
+    path: "{{ engine_dir }}/data"
+    state: directory
+    owner: "{{ iii_user }}"
+    group: "{{ iii_group }}"
+    mode: "0775"
+
+- name: Deploy base systemd service unit file for the Engine
+  ansible.builtin.copy:
+    src: "../../../systemd/iii-engine.service"
+    dest: "/etc/systemd/system/iii-engine.service"
+    owner: root
+    group: root
+    mode: "0644"
+  register: service_deployed
+
+- name: Probe the global iii CLI tool capabilities to check for 'start' command
+  ansible.builtin.command: "/usr/local/bin/iii start --help"
+  register: start_command_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Fall back to 'iii' command with explicit config if 'iii start' is unsupported by the CLI version
+  ansible.builtin.replace:
+    path: "/etc/systemd/system/iii-engine.service"
+    regexp: '/usr/local/bin/iii start'
+    replace: '/usr/local/bin/iii --config config.yaml'
+  when: start_command_check.rc != 0
+  notify: Restart iii-engine
+
+- name: Reload systemd to parse new or modified service units
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Start and enable the iii-engine service
+  ansible.builtin.systemd:
+    name: iii-engine
+    state: started
+    enabled: true
+...

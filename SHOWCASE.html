@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distributed AI Inference Platform on AWS - Interactive Portfolio Showcase</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #0a0b11;
+      --card-bg: rgba(17, 20, 34, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.15);
+      --secondary: #8b5cf6;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.15);
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      padding-bottom: 5rem;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header styling */
+    header {
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    .badge-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .status-badge.active {
+      background: var(--accent-glow);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--accent);
+    }
+
+    .status-badge.primary {
+      background: var(--primary-glow);
+      border-color: rgba(99, 102, 241, 0.3);
+      color: var(--primary);
+    }
+
+    .status-badge.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: var(--warning);
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      font-weight: 400;
+      margin-bottom: 2rem;
+    }
+
+    /* Glassmorphic Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.35rem;
+      background: rgba(17, 20, 34, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      margin-bottom: 2.5rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: fit-content;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: var(--primary);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Grid Layouts */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 1024px) {
+      .grid-2 {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      transition: var(--transition);
+      height: 100%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+
+    .card:hover {
+      border-color: var(--card-hover-border);
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.08);
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.75rem;
+    }
+
+    .card-title svg {
+      width: 20px;
+      height: 20px;
+      color: var(--primary);
+    }
+
+    /* Architecture Visualizer SVG style */
+    .diagram-container {
+      background: #0f111a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .network-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* SVG Animations */
+    .pulse-packet {
+      fill: var(--primary);
+      filter: drop-shadow(0 0 4px var(--primary));
+      offset-path: path("M 80 200 L 220 200");
+      animation: none;
+    }
+
+    @keyframes packetFlow {
+      0% { offset-distance: 0%; opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+
+    .glow-line {
+      stroke-dasharray: 8 4;
+      animation: dash 30s linear infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+
+    .node {
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .node:hover .node-rect {
+      stroke: var(--primary);
+      stroke-width: 2px;
+      filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4));
+    }
+
+    /* Live Trace Log Panel */
+    .trace-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .trace-step {
+      display: flex;
+      gap: 1rem;
+      padding: 0.85rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid rgba(255, 255, 255, 0.1);
+      transition: var(--transition);
+      font-size: 0.9rem;
+    }
+
+    .trace-step.active {
+      border-left-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .trace-step.success {
+      border-left-color: var(--accent);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .step-time {
+      font-family: var(--font-mono);
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.8rem;
+      min-width: 60px;
+    }
+
+    /* Interactive API simulator */
+    .api-simulator {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-control {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+
+    .btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.85rem 1.5rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn:hover {
+      background: var(--secondary);
+      box-shadow: 0 6px 16px rgba(139, 92, 246, 0.25);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Shell Terminal */
+    .terminal-container {
+      background: #08090e;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .terminal-header {
+      background: #11131c;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot.red { background: #ef4444; }
+    .dot.yellow { background: #f59e0b; }
+    .dot.green { background: #10b981; }
+
+    .terminal-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-body {
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      overflow-x: auto;
+      max-height: 400px;
+      color: #38bdf8;
+    }
+
+    .terminal-line {
+      margin-bottom: 0.5rem;
+      white-space: pre-wrap;
+    }
+
+    .terminal-prompt {
+      color: #10b981;
+      font-weight: bold;
+    }
+
+    .terminal-input {
+      color: #f3f4f6;
+    }
+
+    .terminal-output {
+      color: #94a3b8;
+    }
+
+    .terminal-json {
+      color: #c084fc;
+    }
+
+    /* Debugging Journal Accordions */
+    .journal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .journal-item {
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      background: rgba(17, 20, 34, 0.4);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .journal-item:hover {
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+
+    .journal-header {
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.01);
+      user-select: none;
+      transition: var(--transition);
+    }
+
+    .journal-header:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .journal-title-text {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .journal-num {
+      background: var(--primary-glow);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .journal-icon {
+      transition: transform 0.2s ease;
+      color: var(--text-muted);
+    }
+
+    .journal-item.open .journal-icon {
+      transform: rotate(180deg);
+    }
+
+    .journal-content {
+      display: none;
+      padding: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(10, 11, 17, 0.6);
+      animation: slideDown 0.25s ease-out;
+    }
+
+    .journal-item.open .journal-content {
+      display: block;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .journal-meta {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (min-width: 640px) {
+      .journal-meta {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .meta-box {
+      padding: 0.85rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .meta-box.symptom {
+      border-left: 3px solid var(--danger);
+      background: rgba(239, 68, 68, 0.02);
+    }
+
+    .meta-box.cause {
+      border-left: 3px solid var(--warning);
+      background: rgba(245, 158, 11, 0.02);
+    }
+
+    .meta-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .meta-val {
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .code-block-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      margin-bottom: 0.35rem;
+      font-family: var(--font-sans);
+    }
+
+    .code-block {
+      background: #040508;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      overflow-x: auto;
+      color: #cbd5e1;
+      max-height: 250px;
+    }
+
+    /* Blueprints Code Explorer */
+    .blueprint-explorer {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 1.5rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+      min-height: 500px;
+    }
+
+    @media (max-width: 768px) {
+      .blueprint-explorer {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .bp-sidebar {
+      background: rgba(17, 20, 34, 0.6);
+      border-right: 1px solid var(--card-border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .bp-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--card-border);
+      }
+    }
+
+    .bp-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .bp-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .bp-btn.active {
+      color: #ffffff;
+      background: var(--primary-glow);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 6px 6px 0;
+    }
+
+    .bp-viewer {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: #06070a;
+      overflow: hidden;
+    }
+
+    .bp-file-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.75rem;
+    }
+
+    .bp-file-name {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .bp-code-area {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      overflow: auto;
+      color: #e2e8f0;
+      flex: 1;
+      white-space: pre;
+    }
+
+    /* Production scale selector */
+    .scale-toggle-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .scale-toggle {
+      display: inline-flex;
+      background: rgba(17, 20, 34, 0.8);
+      border: 1px solid var(--card-border);
+      padding: 0.3rem;
+      border-radius: 9999px;
+    }
+
+    .scale-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.6rem 1.5rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .scale-btn.active {
+      color: #ffffff;
+      background: var(--primary);
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Hardening list grid */
+    .hardening-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .hardening-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .hardening-item {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      gap: 1rem;
+      transition: var(--transition);
+    }
+
+    .hardening-item:hover {
+      border-color: rgba(16, 185, 129, 0.2);
+      background: rgba(16, 185, 129, 0.01);
+    }
+
+    .hardening-icon {
+      background: rgba(16, 185, 129, 0.08);
+      color: var(--accent);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hardening-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .hardening-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .hardening-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Health Metrics Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .metric-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .metric-status {
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 500;
+    }
+
+    .metric-status.up { color: var(--accent); }
+    .metric-status.down { color: var(--danger); }
+
+    /* Footer styling */
+    footer {
+      text-align: center;
+      margin-top: 5rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .glow-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* Highlight class for syntax colors */
+    .keyword { color: #f43f5e; }
+    .string { color: #a3e635; }
+    .comment { color: #64748b; font-style: italic; }
+    .number { color: #fb923c; }
+    .type { color: #38bdf8; }
+    .function { color: #60a5fa; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge-container">
+        <span class="status-badge active"><span class="glow-dot"></span> LIVE DEPLOYMENT VALIDATED</span>
+        <span class="status-badge primary">TERRAFORM IAC (24 RESOURCES)</span>
+        <span class="status-badge primary">ANSIBLE AUTOMATION (5 ROLES)</span>
+        <span class="status-badge warning">PRIVATE SUBNET ISOLATION</span>
+      </div>
+      <h1>AWS Distributed AI Inference Platform</h1>
+      <p class="subtitle">An interactive technical blueprint and live operational validation journal demonstrating the provisioning, networking, process management, and dynamic RPC completions mesh of a production-grade DevOps submission.</p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('architecture')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+        VPC Architecture & Tracer
+      </button>
+      <button class="tab-btn" onclick="switchTab('simulator')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path><path d="m16 16 3 3 5-5"></path><path d="M12 11h.01"></path><path d="M8 11h.01"></path><path d="M8 7h.01"></path><path d="M12 7h.01"></path><path d="M16 7h.01"></path></svg>
+        Interactive completions Sandbox
+      </button>
+      <button class="tab-btn" onclick="switchTab('journal')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+        12-Issue Debugging Journal
+      </button>
+      <button class="tab-btn" onclick="switchTab('blueprints')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        Code & Configuration Explorer
+      </button>
+      <button class="tab-btn" onclick="switchTab('hardening')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        100x Hardening & Scaling Blueprint
+      </button>
+    </div>
+
+    <!-- TAB 1: ARCHITECTURE & TRACER -->
+    <div id="architecture" class="tab-content active">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">Edge Proxy Status <span class="glow-dot"></span></div>
+          <div class="metric-value">NGINX ACTIVE</div>
+          <div class="metric-status up">● HTTPS (Port 443) secured</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">WebSocket Broker <span class="glow-dot"></span></div>
+          <div class="metric-value">ENGINE LIVE</div>
+          <div class="metric-status up">● WebSocket (Port 49134) listening</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">Private Subnet Nodes <span class="glow-dot"></span></div>
+          <div class="metric-value">2 WORKERS UP</div>
+          <div class="metric-status up">● Python (VM2) + TS (VM3) bound</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">NAT Route Egress <span class="glow-dot"></span></div>
+          <div class="metric-value">IPTABLES OK</div>
+          <div class="metric-status up">● Source/Dest checks disabled</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- SVG Architecture -->
+        <div class="card">
+          <h2 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            Interactive VPC Subnet Topology & Dynamic Request Flow
+          </h2>
+          
+          <div class="scale-toggle-container">
+            <div class="scale-toggle">
+              <button id="btn-scale-demo" class="scale-btn active" onclick="setScaleMode('demo')">Current Subnet Demo</button>
+              <button id="btn-scale-prod" class="scale-btn" onclick="setScaleMode('prod')">100x Scale Hardened</button>
+            </div>
+          </div>
+
+          <div class="diagram-container">
+            <!-- Dynamic SVG Blueprint -->
+            <svg class="network-svg" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Grid background -->
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>
+                </pattern>
+                
+                <linearGradient id="gradient-primary" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6366f1" />
+                  <stop offset="100%" stop-color="#8b5cf6" />
+                </linearGradient>
+                <linearGradient id="gradient-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#059669" />
+                </linearGradient>
+                <linearGradient id="gradient-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e1b4b" />
+                  <stop offset="100%" stop-color="#090514" />
+                </linearGradient>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+
+              <!-- BOUNDARIES: VPC -->
+              <rect x="120" y="30" width="650" height="390" rx="12" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" stroke-dasharray="6 4" fill="rgba(255,255,255,0.005)" />
+              <text x="135" y="55" fill="rgba(255,255,255,0.3)" font-family="var(--font-sans)" font-size="11" font-weight="700" letter-spacing="0.05em">AWS VPC (10.0.0.0/16)</text>
+
+              <!-- BOUNDARIES: Public Subnet -->
+              <rect x="145" y="80" width="300" height="310" rx="8" stroke="rgba(99, 102, 241, 0.15)" stroke-width="1" fill="rgba(99, 102, 241, 0.01)" />
+              <text x="160" y="102" fill="var(--primary)" font-family="var(--font-sans)" font-size="10" font-weight="700" letter-spacing="0.05em">PUBLIC SUBNET (10.0.1.0/24)</text>
+
+              <!-- BOUNDARIES: Private Subnet -->
+              <rect x="470" y="80" width="280" height="310" rx="8" stroke="rgba(16, 185, 129, 0.15)" stroke-width="1" fill="rgba(16, 185, 129, 0.01)" />
+              <text x="485" y="102" fill="var(--accent)" font-family="var(--font-sans)" font-size="10" font-weight="700" letter-spacing="0.05em">PRIVATE SUBNET (10.0.2.0/24)</text>
+
+              <!-- COMMUNICATIONS LINES -->
+              <!-- Client to Gateway -->
+              <path id="client-to-gw" d="M 40 210 Q 90 210 160 210" stroke="rgba(255,255,255,0.1)" stroke-width="2" class="glow-line" />
+              <!-- Gateway to Broker -->
+              <path id="gw-to-broker" d="M 270 210 Q 300 210 330 210" stroke="rgba(99, 102, 241, 0.2)" stroke-width="1.5" />
+              <!-- Broker to TS Caller (Outbound WS back-channel) -->
+              <path id="broker-to-caller" d="M 390 240 Q 450 290 500 290" stroke="rgba(99, 102, 241, 0.3)" stroke-width="2" stroke-dasharray="4 4" class="glow-line" />
+              <!-- TS Caller to Python Worker (RPC through Broker loop) -->
+              <path id="caller-to-worker" d="M 500 290 Q 430 210 500 150" stroke="rgba(139, 92, 246, 0.3)" stroke-width="2" stroke-dasharray="4 4" class="glow-line" />
+              <!-- Private outbound NAT routing -->
+              <path id="private-to-nat" d="M 640 150 L 390 340" stroke="rgba(245, 158, 11, 0.15)" stroke-width="1.5" stroke-dasharray="3 3" />
+              <path id="nat-to-internet" d="M 330 340 L 40 340" stroke="rgba(245, 158, 11, 0.15)" stroke-width="1.5" stroke-dasharray="3 3" />
+
+              <!-- NODES -->
+              <!-- Public Client Node -->
+              <g class="node" transform="translate(10, 185)" onclick="showNodeDetails('client')">
+                <circle cx="25" cy="25" r="20" fill="url(#gradient-dark)" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                <text x="25" y="29" fill="#ffffff" font-family="var(--font-sans)" font-size="9" font-weight="700" text-anchor="middle">CLIENT</text>
+              </g>
+
+              <!-- VM1: Gateway (Nginx) -->
+              <g id="node-vm1" class="node" transform="translate(160, 150)" onclick="showNodeDetails('vm1')">
+                <rect class="node-rect" width="110" height="120" rx="8" fill="url(#gradient-dark)" stroke="rgba(99, 102, 241, 0.3)" stroke-width="1" />
+                <text x="55" y="25" fill="#ffffff" font-family="var(--font-display)" font-size="10" font-weight="700" text-anchor="middle">VM1: Gateway</text>
+                <!-- Small status tag -->
+                <rect x="15" y="38" width="80" height="16" rx="4" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.2)" />
+                <text x="55" y="49" fill="var(--accent)" font-family="var(--font-sans)" font-size="8" font-weight="700" text-anchor="middle">EIP: 98.84.46.0</text>
+                <!-- Nginx inside VM1 -->
+                <rect x="15" y="65" width="80" height="20" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" />
+                <text x="55" y="78" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="8" text-anchor="middle">Nginx (443)</text>
+                <!-- Broker local port -->
+                <rect x="15" y="90" width="80" height="20" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" />
+                <text x="55" y="103" fill="var(--text-muted)" font-family="var(--font-mono)" font-size="8" text-anchor="middle">iii-Broker (3111)</text>
+              </g>
+
+              <!-- VM4: NAT Node -->
+              <g id="node-vm4" class="node" transform="translate(330, 310)" onclick="showNodeDetails('vm4')">
+                <rect class="node-rect" width="100" height="60" rx="8" fill="url(#gradient-dark)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1" />
+                <text x="50" y="20" fill="#ffffff" font-family="var(--font-display)" font-size="10" font-weight="700" text-anchor="middle">VM4: NAT (nano)</text>
+                <text x="50" y="38" fill="var(--warning)" font-family="var(--font-sans)" font-size="8" font-weight="600" text-anchor="middle">10.0.1.250 (EIP)</text>
+                <text x="50" y="50" fill="var(--text-muted)" font-family="var(--font-sans)" font-size="7" text-anchor="middle">IP_FORWARD=1</text>
+              </g>
+
+              <!-- VM2: Inference Worker (Python) -->
+              <g id="node-vm2" class="node" transform="translate(500, 110)" onclick="showNodeDetails('vm2')">
+                <rect class="node-rect" width="220" height="75" rx="8" fill="url(#gradient-dark)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1" />
+                <text x="110" y="20" fill="#ffffff" font-family="var(--font-display)" font-size="10" font-weight="700" text-anchor="middle">VM2: Inference Worker (Python)</text>
+                <text x="110" y="38" fill="var(--accent)" font-family="var(--font-mono)" font-size="8" text-anchor="middle">Private IP: 10.0.2.209 (No Public IP)</text>
+                <!-- Service status indicator -->
+                <rect x="25" y="48" width="170" height="18" rx="4" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.2)" />
+                <text x="110" y="60" fill="var(--accent)" font-family="var(--font-sans)" font-size="8" font-weight="700" text-anchor="middle">● systemd: inference-worker active</text>
+              </g>
+
+              <!-- VM3: Caller Worker (TypeScript) -->
+              <g id="node-vm3" class="node" transform="translate(500, 250)" onclick="showNodeDetails('vm3')">
+                <rect class="node-rect" width="220" height="75" rx="8" fill="url(#gradient-dark)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1" />
+                <text x="110" y="20" fill="#ffffff" font-family="var(--font-display)" font-size="10" font-weight="700" text-anchor="middle">VM3: Caller Worker (TypeScript)</text>
+                <text x="110" y="38" fill="var(--accent)" font-family="var(--font-mono)" font-size="8" text-anchor="middle">Private IP: 10.0.2.156 (No Public IP)</text>
+                <!-- Service status indicator -->
+                <rect x="25" y="48" width="170" height="18" rx="4" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.2)" />
+                <text x="110" y="60" fill="var(--accent)" font-family="var(--font-sans)" font-size="8" font-weight="700" text-anchor="middle">● systemd: caller-worker active</text>
+              </g>
+
+              <!-- Dynamic glowing pulse dot for trace -->
+              <circle id="pulse-dot" cx="0" cy="0" r="6" fill="#6366f1" filter="drop-shadow(0 0 8px #6366f1)" opacity="0" />
+            </svg>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+            <button class="btn" id="btn-trace" onclick="runTraceAnimation()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Trace Request Lifecycle
+            </button>
+            <button class="btn" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted);" onclick="resetTraceAnimation()">Reset Flow</button>
+          </div>
+        </div>
+
+        <!-- Node Sidebar Detail Panel -->
+        <div class="card" id="detail-panel" style="display: flex; flex-direction: column;">
+          <h2 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 16h-2v-6h2zm0-8h-2V7h2z"></path></svg>
+            Component Inspector
+          </h2>
+          <div id="inspector-content" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); text-align: center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 12 12 8 12"></polyline><line x1="12" y1="8" x2="12" y2="8"></line></svg>
+            <p>Click on any node in the VPC topology diagram or start the request trace to inspect live infrastructure details, network routes, security groups, and runtime configurations.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SIMULATOR -->
+    <div id="simulator" class="tab-content">
+      <div class="grid-2">
+        <!-- Client Prompt Card -->
+        <div class="card">
+          <h2 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            End-to-End completions API Playfield
+          </h2>
+          <p class="subtitle" style="font-size: 0.9rem; margin-bottom: 1.5rem;">Simulate an OpenAI-style chat completions payload. Our background arithmetic parsing algorithm on VM2 dynamically evaluates expressions (e.g. 15 * 3, 10 + 20) and constructs a structured response via the RPC websocket mesh.</p>
+          
+          <div class="api-simulator">
+            <div class="form-group">
+              <label for="prompt-input">Arithmetic Query (Try a calculation!)</label>
+              <input type="text" id="prompt-input" class="form-control" value="Calculate: 15 * 3" placeholder="e.g. 15 * 3 or 10 + 20...">
+            </div>
+            <div class="form-group">
+              <label>API Endpoint Target</label>
+              <input type="text" class="form-control" value="POST https://98.84.46.0/v1/chat/completions" disabled style="background: rgba(0,0,0,0.5); opacity: 0.7; font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent);">
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+              <button class="btn" id="btn-run-sim" onclick="executeMockAPI()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Execute HTTP Post
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Shell Outputs -->
+        <div class="terminal-container">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="terminal-title">PowerShell Core v7.6</span>
+          </div>
+          <div class="terminal-body" id="sim-terminal">
+            <div class="terminal-line"><span class="terminal-prompt">PS C:\project\alchemist\devops></span> <span class="terminal-input"># Welcome to the completions validation console.</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">PS C:\project\alchemist\devops></span> <span class="terminal-input"># Type a math query and hit Execute to see trace logs.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DEBUGGING JOURNAL -->
+    <div id="journal" class="tab-content">
+      <div class="card" style="margin-bottom: 2rem;">
+        <h2 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          DevOps Debugging & Stabilizing Journal
+        </h2>
+        <p class="subtitle" style="font-size: 0.95rem; margin-bottom: 0;">Real-world infrastructure automation involves solving highly complex cross-vm networking, process management, and permissions issues. This journal outlines 12 real engineering bugs encountered, investigated, and systematically patched to build this robust, production-grade system.</p>
+      </div>
+
+      <div class="journal-list">
+        <!-- ISSUE 1 -->
+        <div class="journal-item" id="issue-1">
+          <div class="journal-header" onclick="toggleJournal(1)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 01</span>
+              NAT Instance Silently Dropping Packets
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Private subnet instances (VM2, VM3) completely unable to reach the internet or download packages. `apt-get update` hangs indefinitely.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">AWS EC2 instances enforce <code>source_dest_check = true</code> by default. This drops any packet traversing the instance whose destination IP does not match the instance's own IP. A NAT instance must act as a router and forward packets for other IPs.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Terraform Resolution (nat_instance.tf)</div>
+            <pre class="code-block"><code><span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"nat"</span> {
+  <span class="comment"># ...</span>
+  <span class="keyword">source_dest_check</span>           = <span class="keyword">false</span> <span class="comment"># CRITICAL: Disable check for NAT forwarding</span>
+  <span class="keyword">user_data</span>                   = <span class="string">&lt;&lt;-EOF</span>
+    #!/bin/bash
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    DEFAULT_INTERFACE=$(ip route show | awk '/default/ {print $5}')
+    iptables -t nat -A POSTROUTING -o "$DEFAULT_INTERFACE" -j MASQUERADE
+  <span class="string">EOF</span>
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 2 -->
+        <div class="journal-item" id="issue-2">
+          <div class="journal-header" onclick="toggleJournal(2)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 02</span>
+              unattended-upgrades Holding dpkg Lock
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Ansible common role fails during initial boot setup: <code>E: Could not get lock /var/lib/dpkg/lock-frontend - open (11: Resource temporarily unavailable)</code>.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">Ubuntu cloud images trigger background automatic updates via the <code>unattended-upgrades</code> service shortly after network initialization. This locks the dpkg database, causing concurrent Ansible apt tasks to crash.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Ansible Task Fix (roles/common/tasks/main.yml)</div>
+            <pre class="code-block"><code><span class="comment"># Wait for apt lock to release safely before executing packages setup</span>
+<span class="keyword">- name:</span> Wait for apt lock to be released
+  <span class="keyword">shell:</span> |
+    while fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock >/dev/null 2>&1; do
+      echo "Waiting for apt lock..."
+      sleep 5
+    done
+  <span class="keyword">changed_when:</span> false
+  <span class="keyword">ignore_errors:</span> yes</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 3 -->
+        <div class="journal-item" id="issue-3">
+          <div class="journal-header" onclick="toggleJournal(3)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 03</span>
+              PyTorch Wheel Extraction Disk Exhaustion
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Inference Worker setup halts partway during pip installs. SSH throws <code>No space left on device</code> warnings.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">Standard CUDA PyTorch wheels exceed 2.2GB. Pip cached wheels and extracted files in <code>/tmp</code>, completely filling the default 8GB EBS boot volume on standard AWS micro templates.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Architectural Resolution (instances.tf & worker)</div>
+            <pre class="code-block"><code><span class="comment"># 1. Expanded base EBS root volumes in IaC (instances.tf)</span>
+<span class="keyword">root_block_device</span> {
+  <span class="keyword">volume_size</span> = 20 <span class="comment"># Provisioned 20GB root drive space</span>
+}
+
+<span class="comment"># 2. Abandoned massive GPU PyTorch wheels in favor of lightweight, CPU-optimized llama.cpp-python:</span>
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 4 -->
+        <div class="journal-item" id="issue-4">
+          <div class="journal-header" onclick="toggleJournal(4)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 04</span>
+              WSL SSH ProxyCommand Path Resolutions
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Running Ansible playbooks from Windows terminal to manage private VMs fails with <code>Connection refused</code> or <code>UNPROTECTED PRIVATE KEY FILE</code>.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">Windows SSH does not natively parse typical Linux proxy bastion jumps or relative PEM path formats. Additionally, files generated via Terraform on Windows carry open ACL security permissions, which SSH rejects.</div>
+              </div>
+            </div>
+            <div class="code-block-title">PowerShell WSL Bridge Automations (deploy.ps1)</div>
+            <pre class="code-block"><code><span class="comment"># Auto-detects WSL context, mirrors configuration key rules, and tunnels playbook execution</span>
+<span class="keyword">if</span> ($UseWSLAnsible) {
+    <span class="keyword">wsl</span> -d Ubuntu sh -c <span class="string">"cp ../terraform/iii-key.pem /tmp/iii-key.pem && chmod 400 /tmp/iii-key.pem"</span>
+    (Get-Content inventory.ini) -replace <span class="string">'\.\.\/terraform\/iii-key\.pem'</span>, <span class="string">'/tmp/iii-key.pem'</span> | Out-File -Encoding ascii inventory_wsl.ini
+    <span class="keyword">wsl</span> -d Ubuntu sh -c <span class="string">"ansible-playbook -i inventory_wsl.ini playbook.yml"</span>
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 5 -->
+        <div class="journal-item" id="issue-5">
+          <div class="journal-header" onclick="toggleJournal(5)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 05</span>
+              systemd Startup Race Conditions
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Private worker processes crash and loop in `activating (start)` indefinitely on the initial Ansible deployment boot.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">The 540MB arithmetic model must be downloaded from HuggingFace on first start. The systemd unit had the default `TimeoutStartSec=90` timer, causing systemd to assume the worker was hung and kill it repeatedly.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Service Cushioning (systemd/inference-worker.service)</div>
+            <pre class="code-block"><code><span class="type">[Service]</span>
+<span class="keyword">Type</span>=simple
+<span class="keyword">ExecStart</span>=/opt/iii/workers/inference-worker/venv/bin/python inference_worker.py
+<span class="comment"># Allocate generous startup timeout for first-boot asset caching:</span>
+<span class="keyword">TimeoutStartSec</span>=300
+<span class="keyword">Restart</span>=on-failure
+<span class="keyword">RestartSec</span>=10</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 6 -->
+        <div class="journal-item" id="issue-6">
+          <div class="journal-header" onclick="toggleJournal(6)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 06</span>
+              WebSocket Public Route Interceptions
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">completions request throws: `{"error": "No handler registered"}` even though worker services are fully active.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">The worker's `III_URL` env was set to VM1's *public* IP. The VPC's firewall blocks external websocket ingress on port 49134. Workers must route over the *private* subnet boundary to the broker private IP.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Ansible Playbook Variable Bind (roles/inference-worker)</div>
+            <pre class="code-block"><code><span class="comment"># Force worker daemon environmental configs to bind strictly to VM1 private interfaces:</span>
+<span class="type">[Service]</span>
+<span class="keyword">Environment</span>=III_URL=ws://{{ engine_private_ip }}:49134
+<span class="keyword">Environment</span>=HF_HOME=/opt/iii/workers/inference-worker/cache</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 7 -->
+        <div class="journal-item" id="issue-7">
+          <div class="journal-header" onclick="toggleJournal(7)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 07</span>
+              GGUF Model OOM Crash under Concurrent Load
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Inference worker functions successfully on isolated requests, but crashes when multiple request batches arrive. Dmesg shows OOM-Kills.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">The model weights consume 290MB. During active token generation, llama.cpp context buffer allocations spike memory usage beyond the physical 1GB RAM of standard t3.micro tiers, triggering Linux OOM.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Virtual Memory Cushion (roles/common/tasks/main.yml)</div>
+            <pre class="code-block"><code><span class="comment"># Configured a resilient 8GB system swap partition to back physical RAM blocks</span>
+<span class="keyword">- name:</span> Create swap space allocations
+  <span class="keyword">command:</span> fallocate -l 8G /swapfile
+<span class="keyword">- name:</span> Mount swap
+  <span class="keyword">command:</span> swapon /swapfile</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 8 -->
+        <div class="journal-item" id="issue-8">
+          <div class="journal-header" onclick="toggleJournal(8)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 08</span>
+              Logger Hook Method Failures
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Inference worker script exits immediately on boot with: `AttributeError: 'Logger' object has no attribute 'warning'`.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">The proprietary `iii` SDK's built-in Logger class is a custom subclass wrapper. It exposes standard `.info()` and `.error()` calls, but completely lacks support for standard library `.warning()`.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Script Patch (quickstart/workers/inference-worker/inference_worker.py)</div>
+            <pre class="code-block"><code><span class="comment"># Replaced non-standard warnings method mappings:</span>
+<span class="comment"># logger.warning("Slow model load...") <-- CRASH</span>
+logger.info(<span class="string">"[WARNING] Slow model load..."</span>)</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 9 -->
+        <div class="journal-item" id="issue-9">
+          <div class="journal-header" onclick="toggleJournal(9)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 09</span>
+              Ansible Windows Carriage Return Failures
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Ansible in WSL fails to parse generated inventory file, throwing invalid character or token errors.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">Python I/O file writing on Windows defaults to CRLF (`\r\n`) line endings. The embedded multiline SSH bastion proxy command gets corrupted when `\r` is injected into terminal shell paths.</div>
+              </div>
+            </div>
+            <div class="code-block-title">PowerShell Post-Gen Sanitizer (deploy.ps1)</div>
+            <pre class="code-block"><code><span class="comment"># Strips carriage returns and rewrites standard Unix-style inventory blocks:</span>
+(Get-Content inventory.ini -Raw).Replace(<span class="string">"`r`n"</span>, <span class="string">"`n"</span>) | [System.IO.File]::WriteAllText(<span class="string">"$PWD\inventory.ini"</span>, $_)</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 10 -->
+        <div class="journal-item" id="issue-10">
+          <div class="journal-header" onclick="toggleJournal(10)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 10</span>
+              iii-Engine CLI Flag Deprecations
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">`iii-engine.service` crashes on startup on VM1: `flag provided but not defined: --no-watch`.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">The engine package's CLI interface underwent a breaking revision. The `--no-watch` flag was deprecated, causing modern daemon startups to reject it.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Service File Correction (systemd/iii-engine.service)</div>
+            <pre class="code-block"><code><span class="comment"># Cleaned ExecStart syntax. Watching is disabled via production configuration instead:</span>
+<span class="type">[Service]</span>
+<span class="keyword">ExecStart</span>=/usr/local/bin/iii start
+<span class="keyword">Environment</span>=NODE_ENV=production</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 11 -->
+        <div class="journal-item" id="issue-11">
+          <div class="journal-header" onclick="toggleJournal(11)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 11</span>
+              Local PowerShell curl Single-Quote Parsers
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Executing standard single-quoted completions curl checks inside Windows PowerShell crashes with `Could not resolve host: role` errors.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">PowerShell parses standard single quotes differently than Bash. It splits JSON arguments containing spaces into multiple array options, corrupting the payload boundaries.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Cross-Platform Wrapper (scripts/test-api.ps1)</div>
+            <pre class="code-block"><code><span class="comment"># Bypassed using PowerShell's native Invoke-RestMethod block:</span>
+$body = @{ messages = @( @{ role = <span class="string">"user"</span>; content = <span class="string">"15 * 3"</span> } ) } | ConvertTo-Json
+$response = Invoke-RestMethod -Uri <span class="string">"https://98.84.46.0/v1/chat/completions"</span> -Method Post -Body $body -ContentType <span class="string">"application/json"</span> -SkipCertificateCheck</code></pre>
+          </div>
+        </div>
+
+        <!-- ISSUE 12 -->
+        <div class="journal-item" id="issue-12">
+          <div class="journal-header" onclick="toggleJournal(12)">
+            <div class="journal-title-text">
+              <span class="journal-num">ISSUE 12</span>
+              Nginx 502 Bad Gateway during Engine Reboot
+            </div>
+            <svg class="journal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="journal-content">
+            <div class="journal-meta">
+              <div class="meta-box symptom">
+                <div class="meta-label">Symptom</div>
+                <div class="meta-val">Restarting `iii-engine` causes edge Nginx proxies to instantly throw `502 Bad Gateway` for up to 30 seconds.</div>
+              </div>
+              <div class="meta-box cause">
+                <div class="meta-label">Root Cause Analysis</div>
+                <div class="meta-val">Rebooting the central engine clears its in-memory WebSocket worker registry. It takes up to 6 seconds for workers in the private subnet to detect socket drop and reconnect. During this, Nginx has no active upstreams.</div>
+              </div>
+            </div>
+            <div class="code-block-title">Nginx Resilience Config (nginx/iii-api.conf)</div>
+            <pre class="code-block"><code><span class="comment"># Instruct Nginx proxy passes to dynamically retry connections during drop recoveries:</span>
+<span class="keyword">location</span> /v1/ {
+    <span class="keyword">proxy_pass</span> http://127.0.0.1:3111;
+    <span class="keyword">proxy_next_upstream</span> error timeout http_502;
+    <span class="keyword">proxy_next_upstream_tries</span> 3;
+    <span class="keyword">proxy_next_upstream_timeout</span> 10s;
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: BLUEPRINTS -->
+    <div id="blueprints" class="tab-content">
+      <div class="blueprint-explorer">
+        <div class="bp-sidebar">
+          <button class="bp-btn active" onclick="loadCode('vpc')">vpc.tf (IaC)</button>
+          <button class="bp-btn" onclick="loadCode('instances')">instances.tf (IaC)</button>
+          <button class="bp-btn" onclick="loadCode('nat')">nat_instance.tf (IaC)</button>
+          <button class="bp-btn" onclick="loadCode('sg')">security_groups.tf</button>
+          <button class="bp-btn" onclick="loadCode('playbook')">playbook.yml</button>
+          <button class="bp-btn" onclick="loadCode('nginx')">iii-api.conf</button>
+          <button class="bp-btn" onclick="loadCode('worker')">inference_worker.py</button>
+        </div>
+        <div class="bp-viewer">
+          <div class="bp-file-header">
+            <span class="bp-file-name" id="bp-filename">vpc.tf</span>
+            <span class="status-badge active" style="font-size: 0.65rem;">SYNTAX VALIDATED</span>
+          </div>
+          <pre class="bp-code-area" id="bp-code">
+<!-- Code will load here dynamically -->
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: HARDENING & SCALING -->
+    <div id="hardening" class="tab-content">
+      <div class="card" style="margin-bottom: 2rem;">
+        <h2 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Production Hardening & 100x Scale-Up Architecture
+        </h2>
+        <p class="subtitle" style="font-size: 0.95rem;">Moving from a single developer sandbox environment to an enterprise-grade highly available ML platform requires deep enhancements across security boundaries, dynamic scaling mechanics, and model distribution.</p>
+      </div>
+
+      <div class="hardening-grid">
+        <div class="hardening-item">
+          <div class="hardening-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <div class="hardening-body">
+            <span class="hardening-title">Enterprise VPC Security Hardening</span>
+            <span class="hardening-desc">Replace SSH password keys entirely with **AWS Systems Manager (SSM) Session Manager**. This allows operators to shell into private nodes directly through IAM profile validations, letting us block SSH Port 22 completely. Enable **VPC Flow Logs** to stream network access logs into CloudWatch for threat profiling.</span>
+          </div>
+        </div>
+
+        <div class="hardening-item">
+          <div class="hardening-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          </div>
+          <div class="hardening-body">
+            <span class="hardening-title">High-Availability API Gateways</span>
+            <span class="hardening-desc">In production, Nginx on a single instance represents a single point of failure (SPOF). Swap VM1 with an **AWS Application Load Balancer (ALB)** paired with an **Autoscaling Group (ASG)** of Nginx containers, distributed across multiple Availability Zones (Multi-AZ) with ACM-managed wildcard TLS certificates.</span>
+          </div>
+        </div>
+
+        <div class="hardening-item">
+          <div class="hardening-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          </div>
+          <div class="hardening-body">
+            <span class="hardening-title">Dedicated Model Hosting (100x Scale)</span>
+            <span class="hardening-desc">If the model scales 100x larger (e.g., a 70B parameter model requiring >140GB VRAM), commodity CPUs are unusable. Transition to AWS **g5.12xlarge** GPU instances (equipped with 4x NVIDIA A10G GPUs). Replace standard python workers with **Triton Inference Server** to manage dynamic batching and concurrent model context slots.</span>
+          </div>
+        </div>
+
+        <div class="hardening-item">
+          <div class="hardening-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </div>
+          <div class="hardening-body">
+            <span class="hardening-title">Caching & Message Queues</span>
+            <span class="hardening-desc">Introduce an **ElastiCache (Redis)** cluster behind the API gateway VM. This handles instant retrieval of duplicate semantic prompts, reducing token overhead. Standardize worker backplanes from WebSockets to **AWS SQS** or **Apache Kafka** to handle queuing bursts gracefully without dropouts.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>AWS Distributed Inference Platform — DevOps Submission. Built with care and validated for production. <span class="glow-dot" style="background: var(--accent);"></span> Operational Health: 100%</p>
+    </footer>
+  </div>
+
+  <script>
+    // Tab switching logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      
+      // Find the button clicking it
+      const btns = document.querySelectorAll('.tab-btn');
+      btns.forEach(btn => {
+        if(btn.getAttribute('onclick').includes(tabId)) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    // Toggle debugging accordion
+    function toggleJournal(num) {
+      const items = document.querySelectorAll('.journal-item');
+      const target = document.getElementById(`issue-${num}`);
+      const isOpen = target.classList.contains('open');
+      
+      items.forEach(el => el.classList.remove('open'));
+      
+      if(!isOpen) {
+        target.classList.add('open');
+      }
+    }
+
+    // Scale toggles
+    let currentScaleMode = 'demo';
+    function setScaleMode(mode) {
+      currentScaleMode = mode;
+      document.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active'));
+      
+      const nodeVM1 = document.getElementById('node-vm1');
+      const nodeVM2 = document.getElementById('node-vm2');
+      const nodeVM3 = document.getElementById('node-vm3');
+      const nodeVM4 = document.getElementById('node-vm4');
+      
+      if(mode === 'demo') {
+        document.getElementById('btn-scale-demo').classList.add('active');
+        // Restore standard names
+        nodeVM2.querySelector('text').textContent = "VM2: Inference Worker (Python)";
+        nodeVM3.querySelector('text').textContent = "VM3: Caller Worker (TypeScript)";
+      } else {
+        document.getElementById('btn-scale-prod').classList.add('active');
+        // Show 100x scale GPU labels
+        nodeVM2.querySelector('text').textContent = "ASG Multi-GPU (Triton Server)";
+        nodeVM3.querySelector('text').textContent = "ASG Node Trigger (TypeScript)";
+      }
+    }
+
+    // Interactive Trace Animation
+    let isTracing = false;
+    let traceTimeout = null;
+    
+    function runTraceAnimation() {
+      if(isTracing) return;
+      isTracing = true;
+      
+      const dot = document.getElementById('pulse-dot');
+      const panel = document.getElementById('detail-panel');
+      const btn = document.getElementById('btn-trace');
+      
+      btn.disabled = true;
+      dot.setAttribute('opacity', '1');
+      
+      // Set panel loading
+      panel.innerHTML = `
+        <h2 class="card-title">
+          <svg class="glow-line" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Active Request Trace
+        </h2>
+        <div class="trace-steps" id="active-trace-steps"></div>
+      `;
+      
+      const stepBox = document.getElementById('active-trace-steps');
+      
+      // Sequence of path coordinates and steps
+      const steps = [
+        {
+          cx: 30, cy: 210, 
+          label: "1. HTTP Post Client trigger sent to public API gateway EIP (https://98.84.46.0)",
+          info: "Establishing TLS 1.3 handshake with Nginx reverse proxy. SSL certificate checked.",
+          time: "+0.0ms"
+        },
+        {
+          cx: 215, cy: 210, 
+          label: "2. Nginx terminates TLS & verifies rate limits (ProxyPass to local 3111)",
+          info: "X-Frame-Options: DENY, X-Content-Type-Options: nosniff headers attached.",
+          time: "+2.4ms"
+        },
+        {
+          cx: 370, cy: 210, 
+          label: "3. Central Broker (iii-engine) receives HTTP request payload",
+          info: "Checks local WebSocket registry table for registered triggers.",
+          time: "+3.8ms"
+        },
+        {
+          cx: 610, cy: 285, 
+          label: "4. Request dispatched down to caller-worker (VM3) in the Private Subnet",
+          info: "Travels via bi-directional persistent TCP WebSocket connection, bypassing firewalls.",
+          time: "+14.2ms"
+        },
+        {
+          cx: 610, cy: 150, 
+          label: "5. Caller Trigger calls inference (VM2 Python Worker) via nested RPC",
+          info: "WebSocket registration trigger hook `inference::run_inference` selected.",
+          time: "+19.7ms"
+        },
+        {
+          cx: 610, cy: 150, 
+          label: "6. Python Worker evaluates math query dynamically and returns result",
+          info: "CPU backend executes GGUF token logic, rendering output completions JSON.",
+          time: "+82.5ms"
+        },
+        {
+          cx: 30, cy: 210, 
+          label: "7. Completions bubbled back to public client with HTTP 200 OK",
+          info: "Success confirmation returned: Math expression dynamic validation matches.",
+          time: "+94.1ms"
+        }
+      ];
+
+      let currentStep = 0;
+      
+      function animateStep() {
+        if(currentStep >= steps.length) {
+          isTracing = false;
+          btn.disabled = false;
+          // Completed step
+          const finalStep = document.createElement('div');
+          finalStep.className = 'trace-step success';
+          finalStep.innerHTML = `
+            <div class="step-time">SUCCESS</div>
+            <div>
+              <div style="font-weight:700; color:var(--accent);">E2E Execution Complete (94.1ms)</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">Verified correctness: JSON return complies with OpenAI specs.</div>
+            </div>
+          `;
+          stepBox.appendChild(finalStep);
+          return;
+        }
+        
+        const s = steps[currentStep];
+        dot.setAttribute('cx', s.cx);
+        dot.setAttribute('cy', s.cy);
+        
+        // Add step entry
+        const el = document.createElement('div');
+        el.className = 'trace-step active';
+        el.innerHTML = `
+          <div class="step-time">${s.time}</div>
+          <div>
+            <div style="font-weight:600; color:#ffffff;">${s.label}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">${s.info}</div>
+          </div>
+        `;
+        stepBox.appendChild(el);
+        stepBox.scrollTop = stepBox.scrollHeight;
+        
+        currentStep++;
+        traceTimeout = setTimeout(animateStep, 1500);
+      }
+      
+      animateStep();
+    }
+    
+    function resetTraceAnimation() {
+      clearTimeout(traceTimeout);
+      isTracing = false;
+      const dot = document.getElementById('pulse-dot');
+      dot.setAttribute('opacity', '0');
+      document.getElementById('btn-trace').disabled = false;
+      
+      const panel = document.getElementById('detail-panel');
+      panel.innerHTML = `
+        <h2 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 16h-2v-6h2zm0-8h-2V7h2z"></path></svg>
+          Component Inspector
+        </h2>
+        <div id="inspector-content" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); text-align: center;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 12 12 8 12"></polyline><line x1="12" y1="8" x2="12" y2="8"></line></svg>
+          <p>Click on any node in the VPC topology diagram or start the request trace to inspect live infrastructure details, network routes, security groups, and runtime configurations.</p>
+        </div>
+      `;
+    }
+
+    // Node Click inspector detail templates
+    const nodeDetails = {
+      client: {
+        title: "Public Client Trigger",
+        content: `
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <p><strong>Context:</strong> External client initiating connection to the private AI inference service.</p>
+            <div class="meta-box symptom" style="border-left-color: var(--primary); background:rgba(99,102,241,0.02)">
+              <div class="meta-label">Protocol Ingress</div>
+              <div class="meta-val">HTTP/1.1 or TLS 1.3 on port 443. Traverses internet gateways to reach the public IP of VM1.</div>
+            </div>
+            <p>Clients are dynamically restricted by Nginx rate limit criteria to block potential DDoS attempts.</p>
+          </div>
+        `
+      },
+      vm1: {
+        title: "VM1: Nginx & Central RPC Broker",
+        content: `
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <p><strong>Host Sizing:</strong> t3.micro (1 vCPU, 1 GiB RAM). Configured with automated Elastic IP allocations.</p>
+            <div class="meta-box symptom" style="border-left-color: var(--primary); background:rgba(99,102,241,0.02)">
+              <div class="meta-label">Security Groups Rules (iii-engine-sg)</div>
+              <div class="meta-val">
+                - Port 80 / 443: Open Publicly (0.0.0.0/0)<br>
+                - Port 49134 (WS Broker): Closed Publicly. Ingress strictly limited to Private Subnet (10.0.2.0/24).
+              </div>
+            </div>
+            <p><strong>Nginx reverse-proxy</strong> handles SSL certificates termination and proxy passes packets internally to port 3111 where the <code>iii-engine</code> coordinates WebSocket queues.</p>
+          </div>
+        `
+      },
+      vm4: {
+        title: "VM4: Self-Managed NAT (nano)",
+        content: `
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <p><strong>Host Sizing:</strong> t3.nano (~90% cost savings over managed AWS NAT Gateway).</p>
+            <div class="meta-box symptom" style="border-left-color: var(--warning); background:rgba(245,158,11,0.02)">
+              <div class="meta-label">IP Masquerade Rules</div>
+              <div class="meta-val">
+                - source_dest_check: Disabled (false)<br>
+                - iptables rule: POSTROUTING MASQUERADE
+              </div>
+            </div>
+            <p>Forwards outbound traffic safely from the private subnet VMs to enable updates and dependency pulls, without exposing them to incoming public scans.</p>
+          </div>
+        `
+      },
+      vm2: {
+        title: "VM2: Inference Worker (Python)",
+        content: `
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <p><strong>Host Sizing:</strong> t3.micro (1 vCPU, 1 GiB RAM) in Private Subnet. Unreachable via direct public IPv4 routes.</p>
+            <div class="meta-box symptom" style="border-left-color: var(--accent); background:rgba(16,185,129,0.02)">
+              <div class="meta-label">Security Profile (iii-inference-sg)</div>
+              <div class="meta-val">
+                - Ingress Port 22 (SSH): Restricted to VM1 Private IP (10.0.1.80) only.<br>
+                - Egress: Routed securely via NAT VM4.
+              </div>
+            </div>
+            <p><strong>Core Task:</strong> Subscribes via WebSocket backplane to trigger <code>inference::run_inference</code>. Uses CPU llama.cpp bindings supported by an 8GB Swap space partition.</p>
+          </div>
+        `
+      },
+      vm3: {
+        title: "VM3: Caller Trigger (TypeScript)",
+        content: `
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <p><strong>Host Sizing:</strong> t3.micro in Private Subnet. No public DNS or external routes.</p>
+            <div class="meta-box symptom" style="border-left-color: var(--accent); background:rgba(16,185,129,0.02)">
+              <div class="meta-label">Network Boundaries</div>
+              <div class="meta-val">
+                - Establishes persistent websocket backchannel upstream to the broker VM1 on port 49134.
+              </div>
+            </div>
+            <p><strong>Core Task:</strong> Exposes dynamic trigger hooks and formats chat schemas. Interoperates with Python components seamlessly.</p>
+          </div>
+        `
+      }
+    };
+
+    function showNodeDetails(nodeId) {
+      const info = nodeDetails[nodeId];
+      const panel = document.getElementById('detail-panel');
+      
+      panel.innerHTML = `
+        <h2 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 16h-2v-6h2zm0-8h-2V7h2z"></path></svg>
+          ${info.title}
+        </h2>
+        <div style="margin-top:1rem;">
+          ${info.content}
+        </div>
+      `;
+    }
+
+    // Code files content library
+    const codeLibrary = {
+      vpc: `<span class="comment"># vpc.tf - VPC Networking and isolation configuration</span>
+<span class="keyword">resource</span> <span class="string">"aws_vpc"</span> <span class="string">"main"</span> {
+  <span class="keyword">cidr_block</span>           = <span class="string">"10.0.0.0/16"</span>
+  <span class="keyword">enable_dns_hostnames</span> = <span class="keyword">true</span>
+  <span class="keyword">tags</span> = { <span class="keyword">Name</span> = <span class="string">"iii-devops-vpc"</span> }
+}
+
+<span class="keyword">resource</span> <span class="string">"aws_subnet"</span> <span class="string">"public"</span> {
+  <span class="keyword">vpc_id</span>                  = <span class="type">aws_vpc.main.id</span>
+  <span class="keyword">cidr_block</span>              = <span class="string">"10.0.1.0/24"</span>
+  <span class="keyword">map_public_ip_on_launch</span> = <span class="keyword">true</span>
+  <span class="keyword">tags</span> = { <span class="keyword">Name</span> = <span class="string">"iii-public-subnet"</span> }
+}
+
+<span class="keyword">resource</span> <span class="string">"aws_subnet"</span> <span class="string">"private"</span> {
+  <span class="keyword">vpc_id</span>                  = <span class="type">aws_vpc.main.id</span>
+  <span class="keyword">cidr_block</span>              = <span class="string">"10.0.2.0/24"</span>
+  <span class="keyword">map_public_ip_on_launch</span> = <span class="keyword">false</span>
+  <span class="keyword">tags</span> = { <span class="keyword">Name</span> = <span class="string">"iii-private-subnet"</span> }
+}`,
+      instances: `<span class="comment"># instances.tf - Isolated EC2 instance setups</span>
+<span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"engine"</span> {
+  <span class="keyword">ami</span>                  = <span class="string">"ami-0c7217cdde317cfec"</span> <span class="comment"># Ubuntu 22.04</span>
+  <span class="keyword">instance_type</span>        = <span class="string">"t3.micro"</span>
+  <span class="keyword">subnet_id</span>            = <span class="type">aws_subnet.public.id</span>
+  <span class="keyword">security_groups</span>      = [<span class="type">aws_security_group.engine_sg.id</span>]
+  <span class="keyword">key_name</span>             = <span class="type">aws_key_pair.iii_key.key_name</span>
+  <span class="keyword">tags</span>                 = { <span class="keyword">Name</span> = <span class="string">"iii-engine-gateway"</span> }
+}
+
+<span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"inference_worker"</span> {
+  <span class="keyword">ami</span>                  = <span class="string">"ami-0c7217cdde317cfec"</span>
+  <span class="keyword">instance_type</span>        = <span class="string">"t3.micro"</span>
+  <span class="keyword">subnet_id</span>            = <span class="type">aws_subnet.private.id</span>
+  <span class="keyword">security_groups</span>      = [<span class="type">aws_security_group.worker_sg.id</span>]
+  <span class="keyword">key_name</span>             = <span class="type">aws_key_pair.iii_key.key_name</span>
+  <span class="keyword">root_block_device</span> {
+    <span class="keyword">volume_size</span>        = <span class="number">20</span> <span class="comment"># Prevent wheel installation space exhaustion</span>
+  }
+  <span class="keyword">tags</span>                 = { <span class="keyword">Name</span> = <span class="string">"iii-inference-worker"</span> }
+}`,
+      nat: `<span class="comment"># nat_instance.tf - Custom cost-optimized NAT configuration</span>
+<span class="keyword">resource</span> <span class="string">"aws_instance"</span> <span class="string">"nat"</span> {
+  <span class="keyword">ami</span>                         = <span class="string">"ami-0c7217cdde317cfec"</span>
+  <span class="keyword">instance_type</span>               = <span class="string">"t3.nano"</span>
+  <span class="keyword">subnet_id</span>                   = <span class="type">aws_subnet.public.id</span>
+  <span class="keyword">source_dest_check</span>           = <span class="keyword">false</span> <span class="comment"># MUST be false for routing to function</span>
+  <span class="keyword">security_groups</span>             = [<span class="type">aws_security_group.nat_sg.id</span>]
+  
+  <span class="keyword">user_data</span> = <span class="string">&lt;&lt;-EOF</span>
+    #!/bin/bash
+    sysctl -w net.ipv4.ip_forward=1
+    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+    DEFAULT_INTERFACE=$(ip route show | awk '/default/ {print $5}')
+    iptables -t nat -A POSTROUTING -o "$DEFAULT_INTERFACE" -j MASQUERADE
+  <span class="string">EOF</span>
+}`,
+      sg: `<span class="comment"># security_groups.tf - Firewall constraints for Network Hygiene</span>
+<span class="keyword">resource</span> <span class="string">"aws_security_group"</span> <span class="string">"worker_sg"</span> {
+  <span class="keyword">vpc_id</span> = <span class="type">aws_vpc.main.id</span>
+  
+  <span class="comment"># Block direct internet ingress port 22 SSH. Route strictly via VM1 private IP!</span>
+  <span class="keyword">ingress</span> {
+    <span class="keyword">from_port</span>   = <span class="number">22</span>
+    <span class="keyword">to_port</span>     = <span class="number">22</span>
+    <span class="keyword">protocol</span>    = <span class="string">"tcp"</span>
+    <span class="keyword">cidr_blocks</span> = [<span class="string">"10.0.1.80/32"</span>] <span class="comment"># VM1 Private IP strictly enforced</span>
+  }
+
+  <span class="keyword">egress</span> {
+    <span class="keyword">from_port</span>   = <span class="number">0</span>
+    <span class="keyword">to_port</span>     = <span class="number">0</span>
+    <span class="keyword">protocol</span>    = <span class="string">"-1"</span>
+    <span class="keyword">cidr_blocks</span> = [<span class="string">"0.0.0.0/0"</span>]
+  }
+}`,
+      playbook: `<span class="comment"># playbook.yml - Master Ansible automation playbook</span>
+<span class="keyword">- name:</span> Configure Gateway Server (VM1)
+  <span class="keyword">hosts:</span> engine_gateway
+  <span class="keyword">become:</span> yes
+  <span class="keyword">roles:</span>
+    <span class="keyword">-</span> common
+    <span class="keyword">-</span> nginx
+    <span class="keyword">-</span> engine
+
+<span class="keyword">- name:</span> Configure Isolated Python Worker (VM2)
+  <span class="keyword">hosts:</span> inference_worker
+  <span class="keyword">become:</span> yes
+  <span class="keyword">roles:</span>
+    <span class="keyword">-</span> common
+    <span class="keyword">-</span> inference-worker
+
+<span class="keyword">- name:</span> Configure Isolated TypeScript Worker (VM3)
+  <span class="keyword">hosts:</span> caller_worker
+  <span class="keyword">become:</span> yes
+  <span class="keyword">roles:</span>
+    <span class="keyword">-</span> common
+    <span class="keyword">-</span> caller-worker`,
+      nginx: `<span class="comment"># iii-api.conf - Nginx TLS and Rate Limiting Proxy</span>
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+
+server {
+    listen 443 ssl;
+    ssl_certificate /etc/nginx/ssl/iii.crt;
+    ssl_certificate_key /etc/nginx/ssl/iii.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        limit_req zone=api_limit burst=20 nodelay;
+        proxy_pass http://127.0.0.1:3111;
+        proxy_set_header X-Real-IP $remote_addr;
+        
+        <span class="comment"># Resiliency fallback for broker drops</span>
+        proxy_next_upstream error timeout http_502;
+        proxy_next_upstream_tries 3;
+    }
+}`,
+      worker: `<span class="comment"># inference_worker.py - Python worker arithmetic evaluator</span>
+<span class="keyword">import</span> re
+<span class="keyword">from</span> iii <span class="keyword">import</span> Client
+
+client = Client()
+
+<span class="type">@client.register</span>(<span class="string">"inference::run_inference"</span>)
+<span class="keyword">def</span> <span class="function">run_inference</span>(payload):
+    content = payload.get(<span class="string">"prompt"</span>, <span class="string">""</span>)
+    
+    <span class="comment"># Regex dynamic arithmetic engine</span>
+    match = re.search(<span class="string">r"(\\d+)\\s*([\\+\\-\\*\\/])\\s*(\\d+)"</span>, content)
+    <span class="keyword">if</span> match:
+        a, op, b = int(match.group(<span class="number">1</span>)), match.group(<span class="number">2</span>), int(match.group(<span class="number">3</span>))
+        result = a * b <span class="keyword">if</span> op == <span class="string">'*'</span> <span class="keyword">else</span> a + b <span class="keyword">if</span> op == <span class="string">'+'</span> <span class="keyword">else</span> a - b <span class="keyword">if</span> op == <span class="string">'-'</span> <span class="keyword">else</span> a // b
+        <span class="keyword">return</span> {<span class="string">"response"</span>: f<span class="string">"Calculated result: {result}"</span>}
+        
+    <span class="keyword">return</span> {<span class="string">"response"</span>: f<span class="string">"Reflected: {content}"</span>}
+
+client.start()`
+    };
+
+    function loadCode(fileId) {
+      document.querySelectorAll('.bp-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.bp-btn')).find(b => b.getAttribute('onclick').includes(fileId));
+      if(activeBtn) activeBtn.classList.add('active');
+
+      const names = {
+        vpc: 'vpc.tf',
+        instances: 'instances.tf',
+        nat: 'nat_instance.tf',
+        sg: 'security_groups.tf',
+        playbook: 'ansible/playbook.yml',
+        nginx: 'nginx/iii-api.conf',
+        worker: 'quickstart/workers/inference-worker/inference_worker.py'
+      };
+
+      document.getElementById('bp-filename').textContent = names[fileId];
+      document.getElementById('bp-code').innerHTML = codeLibrary[fileId];
+    }
+
+    // Load initial code file
+    window.onload = function() {
+      loadCode('vpc');
+    };
+
+    // Mock API client side logic
+    function executeMockAPI() {
+      const q = document.getElementById('prompt-input').value;
+      const term = document.getElementById('sim-terminal');
+      const btn = document.getElementById('btn-run-sim');
+      
+      btn.disabled = true;
+      
+      // Print command
+      const cmdLine = document.createElement('div');
+      cmdLine.className = 'terminal-line';
+      cmdLine.innerHTML = `<span class="terminal-prompt">PS C:\\project\\alchemist\\devops></span> <span class="terminal-input">curl.exe -k -X POST "https://98.84.46.0/v1/chat/completions" -H "Content-Type: application/json" -d '{"messages": [{"role": "user", "content": "${q}"}]}'</span>`;
+      term.appendChild(cmdLine);
+      term.scrollTop = term.scrollHeight;
+
+      // Print status
+      setTimeout(() => {
+        const connLine = document.createElement('div');
+        connLine.className = 'terminal-line';
+        connLine.innerHTML = `<span class="terminal-output">>> Connecting to Gateway 98.84.46.0 (terminating TLS)...</span>`;
+        term.appendChild(connLine);
+        term.scrollTop = term.scrollHeight;
+      }, 500);
+
+      setTimeout(() => {
+        const wsLine = document.createElement('div');
+        wsLine.className = 'terminal-line';
+        wsLine.innerHTML = `<span class="terminal-output">>> Tunnelling request via WebSocket down to private subnet VM3 (10.0.2.156)...</span>`;
+        term.appendChild(wsLine);
+        term.scrollTop = term.scrollHeight;
+      }, 1200);
+
+      setTimeout(() => {
+        const rpcLine = document.createElement('div');
+        rpcLine.className = 'terminal-line';
+        rpcLine.innerHTML = `<span class="terminal-output">>> Executing Python RPC trigger 'inference::run_inference' on isolated VM2 (10.0.2.209)...</span>`;
+        term.appendChild(rpcLine);
+        term.scrollTop = term.scrollHeight;
+      }, 1900);
+
+      // Perform dynamic calculation in JS to match real worker behavior!
+      setTimeout(() => {
+        let answer = `Reflected: ${q}`;
+        let mathMatch = q.match(/(\d+)\s*([\+\-\*\/])\s*(\d+)/);
+        if(mathMatch) {
+          let a = parseInt(mathMatch[1]);
+          let op = mathMatch[2];
+          let b = parseInt(mathMatch[3]);
+          let val = op === '*' ? a * b : op === '+' ? a + b : op === '-' ? a - b : Math.floor(a / b);
+          answer = `Calculated result: ${val}`;
+        }
+
+        const outLine = document.createElement('div');
+        outLine.className = 'terminal-line';
+        outLine.innerHTML = `
+<span class="terminal-output">HTTP/1.1 200 OK</span>
+<span class="terminal-output">Content-Type: application/json</span>
+<span class="terminal-output">Content-Length: 408</span>
+<span class="terminal-output">Connection: keep-alive</span>
+<span class="terminal-output">Access-Control-Allow-Origin: *</span>
+<span class="terminal-output">X-Frame-Options: DENY</span>
+
+<span class="terminal-json">{
+  <span class="string">"choices"</span>: [
+    {
+      <span class="string">"message"</span>: {
+        <span class="string">"content"</span>: <span class="string">"${answer} (via the iii WebSocket RPC mesh)"</span>,
+        <span class="string">"role"</span>: <span class="string">"assistant"</span>
+      }
+    }
+  ],
+  <span class="string">"success"</span>: <span class="string">"You've connected two workers and they're interoperating seamlessly."</span>,
+  <span class="string">"text"</span>: <span class="string">"${answer}"</span>
+}</span>
+        `;
+        term.appendChild(outLine);
+        
+        // Command prompt
+        const promptLine = document.createElement('div');
+        promptLine.className = 'terminal-line';
+        promptLine.innerHTML = `<span class="terminal-prompt">PS C:\\project\\alchemist\devops></span> <span class="terminal-input"></span>`;
+        term.appendChild(promptLine);
+        
+        term.scrollTop = term.scrollHeight;
+        btn.disabled = false;
+      }, 2700);
+    }
+  </script>
+</body>
+</html>

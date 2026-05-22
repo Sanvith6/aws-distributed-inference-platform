@@ -1,0 +1,29 @@
+[Unit]
+Description=iii Caller Worker (TypeScript API Handler)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=iii
+Group=iii
+WorkingDirectory=/opt/iii/workers/caller-worker
+Environment=III_URL=ws://ENGINE_PRIVATE_IP:49134
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npx tsx src/worker.ts
+Restart=always
+RestartSec=5
+
+# Security Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/iii
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

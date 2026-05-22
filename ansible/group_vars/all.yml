@@ -1,0 +1,19 @@
+# Shared variables for Ansible deployment orchestration
+
+# System user and group for running all iii services under non-root permissions
+iii_user: "iii"
+iii_group: "iii"
+
+# Network configuration
+engine_http_port: 3111
+engine_websocket_port: 49134
+
+# Directory structures on target VMs
+opt_iii_root: "/opt/iii"
+engine_dir: "/opt/iii/quickstart"
+inference_worker_dir: "/opt/iii/workers/inference-worker"
+caller_worker_dir: "/opt/iii/workers/caller-worker"
+
+# Node.js and Python details
+nodejs_version: "20"
+python_executable: "python3"

@@ -1,0 +1,20 @@
+# Infrastructure State and Keys
+*.pem
+.terraform/
+terraform.tfstate*
+.terraform.lock.hcl
+
+# Python Caches and Environments
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+env/
+
+# Node and Local Packages
+node_modules/
+
+# Local Data / Log Caches
+data/
+*.log

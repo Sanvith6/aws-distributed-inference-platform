@@ -1,0 +1,91 @@
+---
+# Nginx role tasks to stand up a secure, rate-limited TLS-terminated edge gateway proxy
+
+- name: Install Nginx package
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Create Nginx SSL directory
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check if self-signed TLS certificates already exist
+  ansible.builtin.stat:
+    path: /etc/nginx/ssl/iii-api.crt
+  register: ssl_cert_stat
+
+- name: Generate self-signed TLS key and certificate for edge proxy
+  ansible.builtin.command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:4096
+    -keyout /etc/nginx/ssl/iii-api.key
+    -out /etc/nginx/ssl/iii-api.crt
+    -subj "/C=US/ST=State/L=City/O=Alchemyst/OU=DevOps/CN=iii-api.local"
+  when: not ssl_cert_stat.stat.exists
+  changed_when: true
+
+- name: Ensure correct file permissions on TLS private key and certificate
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: root
+    group: www-data
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "/etc/nginx/ssl/iii-api.key", mode: "0640" }
+    - { path: "/etc/nginx/ssl/iii-api.crt", mode: "0644" }
+
+- name: Deploy the hardened Nginx reverse proxy configuration
+  ansible.builtin.copy:
+    src: "../../../nginx/iii-api.conf"
+    dest: "/etc/nginx/sites-available/iii-api.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Enable the iii-api Nginx site configuration
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/iii-api.conf"
+    dest: "/etc/nginx/sites-enabled/iii-api.conf"
+    state: link
+  notify: Restart nginx
+
+- name: Remove the default un-encrypted Nginx page routing
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+  notify: Restart nginx
+
+- name: Deploy custom Nginx log rotation configuration to prevent disk exhaustion
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/nginx
+    content: |
+      /var/log/nginx/*.log {
+          daily
+          missingok
+          rotate 14
+          compress
+          delaycompress
+          notifempty
+          create 0640 www-data adm
+          sharedscripts
+          postrotate
+              if [ -f /var/run/nginx.pid ]; then
+                  kill -USR1 $(cat /var/run/nginx.pid)
+              fi
+          endscript
+      }
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ensure Nginx service is enabled and started
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true
+...
