@@ -281,11 +281,13 @@ def run_inference_handler(payload):
     messages = payload.get("messages", [])
     user_query = messages[-1].get("content", "hello")
 
-    # Generate response (mock / SLM-backed)
-    mock_response = f"Distributed AI inference response. Query: '{user_query}'"
+    # Build a Gemma-formatted prompt, falling back to a manual template
+    # when the GGUF tokenizer has no Hugging Face chat_template.
+    prompt = build_gemma_prompt(messages, user_query)
+    response_text = generate_with_gemma_gguf(prompt)
     return {
-        "choices": [{"message": {"role": "assistant", "content": mock_response}}],
-        "text": mock_response
+        "choices": [{"message": {"role": "assistant", "content": response_text}}],
+        "text": response_text
     }
 
 iii.register_function("inference::run_inference", run_inference_handler)
@@ -414,7 +416,7 @@ Step 6: inference-worker executes (VM2)
 • Receives RPC message from engine over WS
 • Executes run_inference_handler(payload)
 • Extracts user query from messages array
-• Generates response (mock or SLM-backed)
+• Generates response with the Gemma-3 270M GGUF model
 • Returns {"choices": [...], "text": "..."} UP the WebSocket
 
 Step 7-10: Return flow (all via WebSocket channels)
@@ -424,8 +426,7 @@ Step 7-10: Return flow (all via WebSocket channels)
 • Engine delivers caller-worker's trigger response as HTTP 200 to Nginx
 • Nginx returns JSON body to client
 
-Total round-trip latency (mock response): ~100-300ms
-Total round-trip latency (SLM response): ~2-30s (model-dependent)
+Total round-trip latency (real SLM response): ~2-30s after model warmup
 ```
 
 ---

@@ -3,6 +3,11 @@
 .terraform/
 terraform.tfstate*
 .terraform.lock.hcl
+terraform/terraform.tfvars
+ansible/inventory.ini
+ansible/inventory_wsl.ini
+quickstart/.iii/
+submission*.zip
 
 # Python Caches and Environments
 __pycache__/
