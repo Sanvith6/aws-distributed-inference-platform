@@ -19,5 +19,4 @@ resource "aws_key_pair" "deployer_paid" {
 resource "local_file" "ssh_key" {
   filename        = "${path.module}/iii-key.pem"
   content         = tls_private_key.pk.private_key_pem
-  file_permission = "0400"
 }
