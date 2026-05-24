@@ -20,6 +20,7 @@ This document chronicles every significant issue encountered during the build an
 10. [iii-engine CLI Flag Incompatibility](#10-iii-engine-cli-flag-incompatibility)
 11. [inference-worker Startup Timeout](#11-inference-worker-startup-timeout)
 12. [Nginx 502 Bad Gateway on Engine Restart](#12-nginx-502-bad-gateway-on-engine-restart)
+13. [Greedy Decoding Repetition Loops (Degenerate 'ooo...' Outputs)](#13-greedy-decoding-repetition-loops-degenerate-ooo-outputs)
 
 ---
 
@@ -618,6 +619,62 @@ This is a known limitation of the architecture. Mitigation strategies applied:
 - In production, use a **multi-engine active-active** setup behind an ALB — individual engine restarts don't affect availability
 - Implement a `/ready` endpoint on the engine that returns 200 only when at least one worker is registered
 - Configure Nginx `proxy_next_upstream` to retry on 502 automatically
+
+---
+
+## 13. Greedy Decoding Repetition Loops (Degenerate 'ooo...' Outputs)
+
+### Symptoms
+- The entire API gateway and WebSocket RPC chain works (status codes are 200, system is fully active)
+- The model outputs are highly repetitive and degenerate (e.g., repeating the word `ooo...`, `that that that`, or looping infinitely)
+- The response returns actual text but fails standard human coherence checks, rendering the AI completion useless.
+
+### Root Cause
+Extremely small base models (such as the Gemma-3 270M parameters SLM) have highly sensitive probability distributions. Under default **greedy decoding** (where `temperature=0.0` or no sampling controls are specified), the model always picks the absolute highest-probability next token. Once it repeats a small n-gram sequence, the feedback loop biases that sequence so strongly that the model gets permanently stuck in a degenerate repetition loop.
+
+### Diagnosis Steps
+
+```bash
+# 1. Run local Completions test
+.\scripts\ask_model.ps1 -Question "What is 2+2?"
+# Result: "oooo oooo oooo oooo oooo oooo..."
+
+# 2. Check the model generation parameters in inference_worker.py
+cat quickstart/workers/inference-worker/inference_worker.py | grep -A 8 "model.generate"
+# Result showed:
+# output_ids = model.generate(
+#     **inputs,
+#     max_new_tokens=256,
+#     pad_token_id=tokenizer.eos_token_id
+# )
+# No sampling (do_sample=True) or penalty controls were set.
+```
+
+### Fix Applied
+
+Tuned the generation parameters in `inference_worker.py` to add advanced sampling controls that penalize repeating n-grams and restrict token selections:
+
+```python
+with torch.no_grad():
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=80,             # Tightened response length to prevent drift
+        do_sample=True,                 # Enabled sampling rather than greedy selection
+        temperature=0.7,                # Added generation temperature for creativity
+        top_k=40,                       # Restrict to top 40 most likely tokens
+        top_p=0.9,                      # Nucleus sampling
+        repetition_penalty=1.6,         # Penalize previously generated tokens strongly
+        no_repeat_ngram_size=3,         # Hard ban on repeating 3-token sequences
+        pad_token_id=tokenizer.eos_token_id
+    )
+```
+
+With these parameters in place, the Gemma-3 270M SLM produces highly creative, contextually-relevant English text matching the prompts!
+
+### Prevention Strategy
+- Never use simple greedy decoding on Small Language Models (SLMs) (< 1B parameters).
+- Always configure `repetition_penalty` (between 1.2 and 1.8) and `no_repeat_ngram_size` (usually 3) for SLM CPU inference.
+- Keep `max_new_tokens` relatively tight (under 128 tokens) to prevent small models from accumulating drift error.
 
 ---
 

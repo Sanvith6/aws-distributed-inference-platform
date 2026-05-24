@@ -261,6 +261,12 @@ Workers were "running" and connecting successfully — but to the wrong endpoint
 
 *Key learning: Service status != application correctness. Always verify functional behavior, not just process status.*
 
+### Challenge 6: Greedy Decoding Repetition Loops in 270M SLM
+
+During final E2E validation of the real Gemma-3 270M model, we observed that while the RPC pipeline was 100% operational, the model produced degenerate, repeating token sequences (e.g., "oooo..."). Due to their extremely small parameter size, SLMs are highly susceptible to feedback loops under default greedy decoding. We resolved this by implementing advanced sampling controls (repetition penalty, top_k, top_p, temperature, and hard n-gram repeat bans) which enabled highly creative, context-aware completions.
+
+*Key learning: CPU-bound SLMs require fine-tuned decoding heuristics; standard defaults often lead to permanent sequence degeneration.*
+
 ---
 
 ## 10. Lessons Learned
