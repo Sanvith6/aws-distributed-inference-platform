@@ -410,6 +410,3 @@ The following deliverables specified in the assignment have all been completed:
 
 ---
 
-*Submitted to: anuran@getalchemystai.com*  
-*CC: saumitra@getalchemystai.com, khushi@getalchemystai.com*  
-*Subject: DevOps Internship Assignment — [Your Name]*
